@@ -1,0 +1,16 @@
+{
+    "name": "switch",
+    "guards": [ "isGitApi" ], 
+    "arguments": [ "newIssueNumber" ],
+    "description": "Comando para cambiar el requerimiento a desarrollar",
+    "steps": [
+        { "name": "validate issue", "function": "validateIssue", "arguments":  ["${newIssueNumber}",  "In Progress"], "description": "Valida que Issue este en la Columna In Progress", "errorMessage": "Por favor verifique que el issue ${newIssueNumber} este en la columna In Progress" },
+        { "name": "check Issue type based on Labels", "function": "checkIssueType", "arguments":  ["${newIssueNumber}"] , "description": "Verifica si el issueType es de Desarrollo o No segun los labels (no desa son automation, documentation)" },
+        { "name": "Se fija que este parado en ${newBranchName}", "function": "validaNoseaBranchActual", "arguments": ["${newBranchName}"], "description": "Valida que no sea la branch actual", "errorMessage": "Ya esta parado sobre la branch ${newBranchName}" },
+        { "criteria": { "field": "isDevelopment", "value": true }, "subtask": "update-documentation"},
+        { "criteria": { "field": "isDevelopment", "value": true }, "subtask": "validate-scratch" },
+        { "subtask": "checkout-branch", "arguments": ["${newBranchName}"] },
+        { "criteria": { "field": "isNewDevelopment", "value": true }, "name": "switch scratch", "command": "sf force config set target-org", "arguments": { "--target-org": "${newBranchName}" }, "description": "Cambia la scratch", "errorMessage": "No se pudo mover al scratch ${newBranchName}. Hagalo manualmente ${command}" },
+        { "criteria": { "field": "isNewDevelopment", "value": true }, "name": "deploy scratch localmente", "command": "sf project deploy start", "arguments": { "--target-org": "${newBranchName}" }, "description": "Deploy por si hubo cambios en main", "errorMessage": "No se pudo mover al scratch ${newBranchName}. Hagalo manualmente ${command}" }
+    ] 
+}

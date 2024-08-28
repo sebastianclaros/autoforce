@@ -1,0 +1,11 @@
+{
+    "name": "validate-code",
+    "guards": [ "targetOrg" ], 
+    "description": "Valida la calidad del codigo y que cumpla buenas practicas",
+    "errorMessage": "Fallo el script de calidad y validacion de codigo, lea atentamente los motivos", 
+    "steps": [
+        { "name": "Scanner" , "command": "sf", "arguments": [ "scanner run", "--engine='pmd,eslint,eslint-lwc'", "--format=csv", "--target='./force-app'"] },
+        { "name": "Test Apex" , "command": "sf", "arguments": [ "apex run test",  "--test-level",  "RunLocalTests",  "--synchronous"] },
+        { "name": "Test LWC" , "command": "yarn", "arguments": [ "test"] }
+    ] 
+}

@@ -1,0 +1,9 @@
+{
+    "name": "deploy-code",
+    "guards": [ "targetOrg" ],
+    "description": "Deploya el codigo a la Org de destino",
+    "errorMessage": "No se pudo deployar el codigo",    
+    "steps": [
+        { "name": "Deploy" , "command": "sf", "arguments": { "project deploy start": "", "--target-org": "${targetOrg}" },  "errorMessage": "No se pudo subir el codigo" }
+    ] 
+}

@@ -1,0 +1,8 @@
+{
+    "name": "cancel",
+    "guards": [ "isGitApi" ], 
+    "description": "Comando para cancelar un requerimiento",
+    "steps": [
+        { "name": "Cancela el issue", "function": "cancelIssue" }
+    ] 
+}

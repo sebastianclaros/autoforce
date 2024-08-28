@@ -1,0 +1,17 @@
+{
+    "name": "create-scratch",
+    "guards": [ "sfInstalled" ],
+    "arguments": { "scratchName": { "default": "${branchName}" }, "permissionSet": { "default": "${permissionSet}" }, "dias": { "default": "7" } },
+    "description": "Crea una scratch Org y sube el codigo con datos de prueba",
+    "errorMessage": "No se pudo asociar la branch ${branchName} al remote. verifique con git branch -vv ",
+    "steps": [
+        { "criteria": { "field": "existBranchScratch", "value": false }, "name": "Crea la scracth org" , "command": "sf", "arguments": { "org create scratch --set-default":"", "--definition-file": "${projectPath}/config/project-scratch-def.json", "--alias":"${scratchName}", "--name": "${scratchName}", "--duration-days": "${dias}" }, "errorMessage": "No se pudo crear la scracth org, verifique que no se haya pasado del limite scratchs (3 activas)* sf org list --clean\n* o bien si quedo en la mitad del proceso\n* sf org resume" },
+        { "criteria": { "field": "existBranchScratch", "value": true }, "name": "Ya existe la Scratch ${scratchName}. Cambia la default org" , "command": "sf", "arguments": { "force config set": "", "target-org": "${scratchName}" }, "errorMessage": "Pruebe manualmente ${command}" },
+        { "name": "Sube el codigo" , "command": "sf", "arguments": { "project deploy start": "", "--target-org": "${scratchName}" },  "errorMessage": "No se pudo subir el codigo" },
+        { "criteria": { "field": "permissionSet" }, "name": "Asigna los permisos" , "command": "sf", "arguments": { "org assign permset": "", "--target-org": "${scratchName}", "--name": "${permissionSet}" } },
+        { "name": "Subiendo los datos" , "command": "sf", "arguments": { "data tree import":"", "--target-org": "${scratchName}", "--plan": "${projectPath}/data/plan.json" } },
+        { "name": "Seteando la scracth en modo debug" , "command": "sf", "arguments": { "apex run": "", "--file": "${projectPath}/scripts/apex/debugMode.apex", "--target-org": "${scratchName}" } },
+        { "name": "Generando la password" , "command": "sf", "arguments": { "org generate password": "", "--target-org": "${scratchName}" }, "errorMessage": "Pruebe manualmente ${command}" },
+        { "name": "Ingresa a la scratch" , "command": "sf", "arguments": { "open org -r":"", "--target-org": "${scratchName}" } }
+    ] 
+}

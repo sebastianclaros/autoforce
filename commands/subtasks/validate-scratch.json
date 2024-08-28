@@ -1,0 +1,9 @@
+{
+    "name": "validate-scratch",
+    "guards": [ "targetOrg" ],
+    "description": "Valida si hay cambios en la scratch que fueron bajados localmente al repo",
+    "errorMessage": "Hay cambios en la scratch. Para bajarlos sf org retrieve start",    
+    "steps": [
+        { "name": "Valida si hay cambios en la scratch" , "function": "validateScratch", "errorMessage": "Hay cambios en la Org que no estan impactados ${hayCambios}.\n ${salida}", "onError": "retrieveCode" }
+    ] 
+}
