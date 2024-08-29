@@ -1,8 +1,7 @@
 import { merge } from "../helpers/merge";
 
-describe('merge library', () => {
-  test('simple merge', () => {
-  
+describe("merge library", () => {
+  test("simple merge", () => {
     const oldContent = `1<!-- start a1 -->
     to be replaced
     <!-- end a1 -->2
@@ -21,10 +20,8 @@ describe('merge library', () => {
     34<!-- start a3 -->
     to be inserted
     <!-- end a3 -->`;
-    
+
     const mergedContent = merge(newContent, oldContent);
     expect(mergedContent).toBe(toBeMerged);
   });
 });
-
-
