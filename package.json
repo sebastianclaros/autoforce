@@ -20,12 +20,16 @@
   "scripts": {
     "build": "microbundle",
     "dev": "microbundle watch",
+    "format": "prettier --write \"src/**/*.(js|ts)\"",
     "test": "jest --config jest.config.js",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
     "version": "npm run format && git add -A src",
     "precommit": "lint-staged",
     "postversion": "git push && git push --tags"
+  },
+  "dependencies": {
+    "prettier": "^2.6.0"
   },
   "devDependencies": {
     "@docusaurus/core": "^3.0.1",
@@ -51,7 +55,6 @@
     "microbundle": "^0.15.1",
     "octokit": "^4.0.2",
     "openai": "^4.54.0",
-    "prettier": "^2.6.0",
     "prompts": "^2.4.2",
     "ts-jest": "29.0.5",
     "ts-node": "^10.9.2",
