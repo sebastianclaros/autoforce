@@ -48,12 +48,16 @@ jobs:
       # Use tag beta for pre-release versions
       - name: Bump pre-release version
         if: startsWith(github.event.inputs.release-type, 'pre')
-        run: |
+        run: 
           echo "NEW_VERSION=$(npm --no-git-tag-version --preid=beta version $RELEASE_TYPE)" >> $GITHUB_ENV
-          echo "RELEASE_TAG=beta" >> $GITHUB_ENV
         env:
           RELEASE_TYPE: ${{ github.event.inputs.release-type }}
 
+      - name: Bump pre-release version 2
+        if: startsWith(github.event.inputs.release-type, 'pre')
+        run: 
+          echo "RELEASE_TAG=beta" >> $GITHUB_ENV
+  
       # Update changelog unreleased section with new version
       - name: Update changelog
         uses: superfaceai/release-changelog-action@v1
