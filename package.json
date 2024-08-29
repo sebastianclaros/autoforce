@@ -21,15 +21,13 @@
     "build": "microbundle",
     "dev": "microbundle watch",
     "format": "prettier --write \"src/**/*.(js|ts)\"",
+    "prettier": "prettier --write \"**/*.{css,html,js,json,ts,md,xml,yaml,yml}\"",
     "test": "jest --config jest.config.js",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
     "version": "npm run format && git add -A src",
     "precommit": "lint-staged",
     "postversion": "git push && git push --tags"
-  },
-  "dependencies": {
-    "prettier": "^2.6.0"
   },
   "devDependencies": {
     "@docusaurus/core": "^3.0.1",
@@ -52,6 +50,7 @@
     "jsforce": "^3.4.1",
     "lint-staged": "^12.3.7",
     "matter": "^0.2.0",
+    "prettier": "^2.6.0",
     "microbundle": "^0.15.1",
     "octokit": "^4.0.2",
     "openai": "^4.54.0",
