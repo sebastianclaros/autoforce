@@ -1,8 +1,21 @@
 {
-    "name": "process",
-    "arguments": { "folder": { "type": "select", "choices": "${modules}" }, "name": { "required": true  }, "identifier": { "required": true  } },
-    "description": "Comando para crear un proceso nuevo",
-    "steps": [
-        { "name": "Crear un proceso nuevo", "function": "createTemplate", "arguments": { "template": "process", "folder": "${folder}", "name": "${name}", "identifier": "${identifier}" } }
-    ] 
+  "name": "process",
+  "arguments": {
+    "folder": { "type": "select", "choices": "${modules}" },
+    "name": { "required": true },
+    "identifier": { "required": true }
+  },
+  "description": "Comando para crear un proceso nuevo",
+  "steps": [
+    {
+      "name": "Crear un proceso nuevo",
+      "function": "createTemplate",
+      "arguments": {
+        "template": "process",
+        "folder": "${folder}",
+        "name": "${name}",
+        "identifier": "${identifier}"
+      }
+    }
+  ]
 }

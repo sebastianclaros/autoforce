@@ -1,8 +1,6 @@
 {
-    "name": "deploy",
-    "guards": [ "isGitApi" ], 
-    "description": "Comando para deployar un requerimiento al ambiente",
-    "steps": [
-        { "name": "Deploya el issue", "function": "deployIssue" }
-    ] 
+  "name": "deploy",
+  "guards": ["isGitApi"],
+  "description": "Comando para deployar un requerimiento al ambiente",
+  "steps": [{ "name": "Deploya el issue", "function": "deployIssue" }]
 }

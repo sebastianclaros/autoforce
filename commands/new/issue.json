@@ -1,9 +1,40 @@
 {
-    "name": "issue",
-    "guards": [ "isGitApi" ], 
-    "arguments": { "title": { "required": true }, "label": { "type": "select", "choices": [ { "title": "Automation", "value": "automation", "description": "Test cases de automatizacion o cualquier cambio dentro de la automatizacion del pipeline" }, { "title": "Bugfix", "value": "bug", "description": "Correxion de codigo, no hay incremento funcional" }, { "title": "Documentation", "value": "documentation", "description": "Cambios en la documentacion" }, { "title": "Feature", "value": "feature", "description": "Nuevas funcionalidades" } ] } },
-    "description": "Comando para crear un requerimiento nuevo",
-    "steps": [
-        { "name": "Crear un issue nuevo", "function": "createIssue", "arguments": ["${title}", "${label}"] }
-    ] 
+  "name": "issue",
+  "guards": ["isGitApi"],
+  "arguments": {
+    "title": { "required": true },
+    "label": {
+      "type": "select",
+      "choices": [
+        {
+          "title": "Automation",
+          "value": "automation",
+          "description": "Test cases de automatizacion o cualquier cambio dentro de la automatizacion del pipeline"
+        },
+        {
+          "title": "Bugfix",
+          "value": "bug",
+          "description": "Correxion de codigo, no hay incremento funcional"
+        },
+        {
+          "title": "Documentation",
+          "value": "documentation",
+          "description": "Cambios en la documentacion"
+        },
+        {
+          "title": "Feature",
+          "value": "feature",
+          "description": "Nuevas funcionalidades"
+        }
+      ]
+    }
+  },
+  "description": "Comando para crear un requerimiento nuevo",
+  "steps": [
+    {
+      "name": "Crear un issue nuevo",
+      "function": "createIssue",
+      "arguments": ["${title}", "${label}"]
+    }
+  ]
 }

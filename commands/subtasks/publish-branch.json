@@ -1,9 +1,20 @@
 {
-    "name": "publish-branch",
-    "guards": [ "isGitApi" ], 
-    "description": "Comando para publicar la branch en Remote",
-    "steps": [
-        { "name": "chequea si hay cambios sin commit", "function": "checkCommitPending", "description": "Chequea si hay algo sin commitear", "errorMessage": "Tiene modificaciones pendientes:\n ${salida}", "onError": "commitChanges" },
-        { "name": "publica la branch", "function": "publishBranch", "description": "Publicha la branch en Remote", "errorMessage": "No se pudo publicar la branch" }
-    ]
+  "name": "publish-branch",
+  "guards": ["isGitApi"],
+  "description": "Comando para publicar la branch en Remote",
+  "steps": [
+    {
+      "name": "chequea si hay cambios sin commit",
+      "function": "checkCommitPending",
+      "description": "Chequea si hay algo sin commitear",
+      "errorMessage": "Tiene modificaciones pendientes:\n ${salida}",
+      "onError": "commitChanges"
+    },
+    {
+      "name": "publica la branch",
+      "function": "publishBranch",
+      "description": "Publicha la branch en Remote",
+      "errorMessage": "No se pudo publicar la branch"
+    }
+  ]
 }

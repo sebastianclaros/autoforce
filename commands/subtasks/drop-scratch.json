@@ -1,10 +1,17 @@
 {
-    "name": "drop-scratch",
-    "guards": [ "targetOrg" ],
-    "arguments": { "scratchName": { "default": "${branchName}" } },
-    "description": "Elimina la scratch",
-    "errorMessage": "No se pudo eliminar la scratch. Verifique si existe con sf org list, y en caso afirmativo pruebe manualmente un sf org delete scratch --target-org ${scratchName}  ",
-    "steps": [
-        { "name": "drop-scratch" , "command": "sf", "arguments": { "org delete scratch":"", "--target-org": "${scratchName}" } }
-    ] 
+  "name": "drop-scratch",
+  "guards": ["targetOrg"],
+  "arguments": { "scratchName": { "default": "${branchName}" } },
+  "description": "Elimina la scratch",
+  "errorMessage": "No se pudo eliminar la scratch. Verifique si existe con sf org list, y en caso afirmativo pruebe manualmente un sf org delete scratch --target-org ${scratchName}  ",
+  "steps": [
+    {
+      "name": "drop-scratch",
+      "command": "sf",
+      "arguments": {
+        "org delete scratch": "",
+        "--target-org": "${scratchName}"
+      }
+    }
+  ]
 }

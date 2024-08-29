@@ -1,12 +1,32 @@
 {
-    "name": "stop",
-    "guards": [ "isGitApi" ], 
-    "description": "Comando para dejar a un lado un requerimiento",
-    "steps": [
-        { "criteria": { "field": "isDevelopment", "value": true }, "subtask": "validate-scratch" },
-        { "criteria": { "field": "isDevelopment", "value": true }, "subtask": "update-documentation" },
-        { "name": "chequea si hay cambios sin commit", "function": "checkCommitPending", "description": "Chequea si hay algo sin commitear:\n ${salida}", "errorMessage": "Tiene modificaciones pendientes", "onError": "commitChanges" },
-        { "name": "publica la branch", "subtask": "publish-branch", "description": "Publica la branch en Remote", "errorMessage": "No se pudo publicar la branch" },
-        { "criteria": { "field": "isDevelopment", "value": true }, "subtask": "drop-scratch" }
-    ] 
+  "name": "stop",
+  "guards": ["isGitApi"],
+  "description": "Comando para dejar a un lado un requerimiento",
+  "steps": [
+    {
+      "criteria": { "field": "isDevelopment", "value": true },
+      "subtask": "validate-scratch"
+    },
+    {
+      "criteria": { "field": "isDevelopment", "value": true },
+      "subtask": "update-documentation"
+    },
+    {
+      "name": "chequea si hay cambios sin commit",
+      "function": "checkCommitPending",
+      "description": "Chequea si hay algo sin commitear:\n ${salida}",
+      "errorMessage": "Tiene modificaciones pendientes",
+      "onError": "commitChanges"
+    },
+    {
+      "name": "publica la branch",
+      "subtask": "publish-branch",
+      "description": "Publica la branch en Remote",
+      "errorMessage": "No se pudo publicar la branch"
+    },
+    {
+      "criteria": { "field": "isDevelopment", "value": true },
+      "subtask": "drop-scratch"
+    }
+  ]
 }

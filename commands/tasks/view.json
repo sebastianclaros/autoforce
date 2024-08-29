@@ -1,8 +1,12 @@
 {
-    "name": "view",
-    "guards": [ "isGitApi" ], 
-    "description": "Comando para ver en detalle el requerimiento",
-    "steps": [
-        { "name": "Ver datos del issue", "function": "viewIssue", "arguments":  ["${issueNumber}"] }
-    ] 
+  "name": "view",
+  "guards": ["isGitApi"],
+  "description": "Comando para ver en detalle el requerimiento",
+  "steps": [
+    {
+      "name": "Ver datos del issue",
+      "function": "viewIssue",
+      "arguments": ["${issueNumber}"]
+    }
+  ]
 }
