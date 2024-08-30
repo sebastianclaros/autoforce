@@ -2,7 +2,7 @@
   "name": "autoforce",
   "homepage": "https://sebastianclaros.github.io/autoforce",
   "private": false,
-  "version": "0.1.0-beta.0",
+  "version": "0.1.0-beta.1",
   "description": "Developer Automation tool for Github / Gitlab and Salesforce projects.",
   "repository": {
     "type": "git",
@@ -25,7 +25,7 @@
     "test": "jest --config jest.config.js",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
-    "version": "npm run format && git add -A src",
+    "version": "npm run format",
     "precommit": "lint-staged",
     "postversion": "git push && git push --tags"
   },
