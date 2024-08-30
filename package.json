@@ -24,7 +24,7 @@
     "test": "jest --config jest.config.js",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
-    "precommit": "lint-staged",
+    "precommit": "lint-staged"
   },
   "devDependencies": {
     "@docusaurus/core": "^3.0.1",
