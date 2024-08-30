@@ -20,14 +20,11 @@
   "scripts": {
     "build": "microbundle",
     "dev": "microbundle watch",
-    "format": "prettier --write \"src/**/*.(js|ts)\"",
     "prettier": "prettier --write \"**/*.{css,html,js,json,ts,md,xml,yaml,yml}\"",
     "test": "jest --config jest.config.js",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
-    "version": "npm run format",
     "precommit": "lint-staged",
-    "postversion": "git push && git push --tags"
   },
   "devDependencies": {
     "@docusaurus/core": "^3.0.1",
