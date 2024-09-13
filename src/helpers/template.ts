@@ -1,12 +1,12 @@
 import fs from "fs";
 import Handlebars from "handlebars";
-import { merge } from "./merge.mjs";
-import { getFiles } from "./util.mjs";
+import { merge } from "./merge.js";
+import { getFiles } from "./util.js";
 
 const TEMPLATE_ROOT_FOLDER = process.cwd() + "/templates";
 
 
-function isObjectEmpty(objectName) {
+function isObjectEmpty(objectName: object) {
   return (
     objectName &&
     Object.keys(objectName).length === 0 &&
@@ -15,7 +15,7 @@ function isObjectEmpty(objectName) {
 }
 
 // Abre el archivo, y antes de devolver el contenido busca si tiene tags {{import subarchivos}} y los incorpora al mismo
-function openTemplate(sourceFolder, templateName, extension) {
+function openTemplate(sourceFolder: string, templateName: string, extension: string) {
   const source = `${sourceFolder}/${templateName}.${extension}`;
   let content = fs.readFileSync(source, "utf8");
   const regexp = /{{[ ]*(import)[ ]*([^}]+)}}/gi;
@@ -35,13 +35,13 @@ function openTemplate(sourceFolder, templateName, extension) {
   return content;
 }
 
-class TemplateEngine {
-  _template;
-  _rendered;
-  _extension;
-  _sourceFolder;
+class TemplateEngine<T> {
+  _template: HandlebarsTemplateDelegate | undefined;
+  _rendered: string | undefined;
+  _extension: string;
+  _sourceFolder: string;
 
-  constructor (source, extension) {
+  constructor (source: string, extension: string) {
     this._sourceFolder = `${TEMPLATE_ROOT_FOLDER}/${source}`;
     if (!fs.existsSync(this._sourceFolder)) {
       throw new Error(`La carpeta source ${this._sourceFolder} no existe!`);
@@ -50,7 +50,7 @@ class TemplateEngine {
   };
   
   getTemplates() {
-    const filterThisExtension = file => file.endsWith(`.${this._extension}`);
+    const filterThisExtension = (file: string): boolean => file.endsWith(`.${this._extension}`);
 
     const templates = [];
     const files = getFiles(this._sourceFolder, filterThisExtension , true, ['dictionary']);
@@ -61,19 +61,19 @@ class TemplateEngine {
     }
     return templates;
   }
-  read (templateName) {
+  read (templateName: string) {
     const rawTemplate = openTemplate(this._sourceFolder, templateName, this._extension);
     this._template = Handlebars.compile(rawTemplate);
   }
 
-  render (context, options) {
-    if (isObjectEmpty(context)) {
+  render (context: object, options: RuntimeOptions = {}) {
+    if (isObjectEmpty(context) || this._template === undefined) {
       return;
     }
     this._rendered = this._template(context, options);
   }
 
-  save (filename, folder, options = {})  {
+  save (filename: string, folder: string, options: SaveTemplateOptions = { create: true, overwrite: true})  {
     let accion = "creo";
     if (folder && !fs.existsSync(folder)) {
       if (options.create) {
@@ -85,21 +85,26 @@ class TemplateEngine {
     if (!filename.endsWith("." + this._extension)) {
       filename += "." + this._extension;
     }
-    const destination = folder ? `${folder}/${filename}` : `${filename}`;
-  
+    const destination = folder ? `${folder}/${filename}` : `${filename}`;  
     let content = this._rendered;
   
-    if (fs.existsSync(destination)) {
-      accion = "combino";
-      const existingContent = fs.readFileSync(destination, "utf8");
-      content = merge(content, existingContent, false);
+    if ( content ){
+      if (fs.existsSync(destination) ) {
+        if (!options.overwrite) {
+          throw new Error(`El archivo ${folder} ya existe!`);
+        }
+        accion = "combino";
+        const existingContent = fs.readFileSync(destination, "utf8");
+        content = merge(content, existingContent, false);
+      }
+
+      fs.writeFileSync(destination, content);
+      console.log(`Se ${accion} el archivo ${filename} con exito!`);
     }
   
-    fs.writeFileSync(destination, content);
-    console.log(`Se ${accion} el archivo ${filename} con exito!`);
   }
 }
 
-export default (source, extension) => {
+export default (source: string, extension: string) => {
   return new TemplateEngine(source, extension);
 }

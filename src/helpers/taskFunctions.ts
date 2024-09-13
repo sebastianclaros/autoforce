@@ -1,12 +1,14 @@
 import {execSync} from "child_process";
-import context from "./context.mjs";
-import { logError} from "./color.mjs";
-import metadata from './metadata.mjs';
+import context from "./context.js";
+import { logError} from "./color.js";
+import metadata from './metadata.js';
 import prompts from "prompts";
-import templateGenerator from "./template.mjs";
-import { getColored } from "./color.mjs";
+import templateGenerator from "./template.js";
+import { getColored } from "./color.js";
+import type { StepArguments, TaskFunction } from "../types/helpers/tasks.js";
+import { AnyValue, ObjectRecord } from "../types/auto.js";
 
-function createTemplate( templateFolder, templateExtension, template, filename, folder, context) {
+function createTemplate( templateFolder: string, templateExtension: string, template: string, filename: string, folder: string, context: ObjectRecord) {
     if (!template || !filename || !templateFolder || !templateExtension) {
         return;
     }
@@ -19,11 +21,11 @@ function createTemplate( templateFolder, templateExtension, template, filename, 
     const view = { ...formulas, ...context};
     templateEngine.read(template);
     templateEngine.render(view);
-    templateEngine.save(filename, folder, { create: true });
+    templateEngine.save(filename, folder );
 }
 
 
-function convertArgsToString(args) {
+function convertArgsToString(args: StepArguments) {
     let argsString = '';
     if ( Array.isArray(args) ) {
         for ( const argName of args) {
@@ -42,22 +44,22 @@ function convertArgsToString(args) {
 
 }
 
-export async function executeCommand(command, args) {
+export async function executeCommand(command: string, args: StepArguments) {
     try {
         context.set('command', command + ' ' + convertArgsToString(args) );
         execSync(command + ' ' + convertArgsToString(args), {stdio: 'inherit'});   
    
         return true;
-    } catch (error) {
+    } catch {
         return false;
     }
 }
 
-export function validateCommand(command, args) {
+export function validateCommand(command: string, args?: StepArguments) {
     return true;
 }
 
-export function validateFunction(functionName, args) {
+export function validateFunction(functionName: string, args?: StepArguments) {
     if ( typeof taskFunctions[functionName] !== 'function' ) {       
         logError(`No se encontro la funcion ${functionName}`);
         return false;
@@ -72,7 +74,7 @@ export function validateFunction(functionName, args) {
     return true;
 }
 
-function getParams(func) {
+function getParams<T>(func: TaskFunction<T>) {
     // String representation of the function code
     let str = func.toString(); 
     str = str.replace(/\/\*[\s\S]*?\*\//g, '')
@@ -81,28 +83,29 @@ function getParams(func) {
         .replace(/=>/g, '')
         .trim();
     // Start parameter names after first '('
-    let start = str.indexOf("(") + 1;
+    const start = str.indexOf("(") + 1;
     // End parameter names is just before last ')'
-    let end = str.length - 1;
-    let result = str.substring(start, end).split(", ");
-    let params = [];
+    const end = str.length - 1;
+    const result = str.substring(start, end).split(", ");
+    const params: string[] = [];
     result.forEach(element => {
         element = element.replace(/=[\s\S]*/g, '').trim();
-        if (element.length > 0)
+        if (element.length > 0){
             params.push(element);
+        }
     });
     return params;
 }
-function createArray(fields, object) {
+function createArray(fields: string[], record: Record<string,string>) {
     const fieldArray =[]; 
     for ( const field of fields ) {
-        const value = object[field];
-        fieldArray.push( value );    
+        const value = record[field];
+        fieldArray.push( value );
     }
     return fieldArray;
 } 
    
-async function askForContinue(message) {
+async function askForContinue(message: string) {
     const answer = await prompts([
         {
         type: "confirm",
@@ -128,11 +131,57 @@ async function askForCommitMessage() {
     return answer.message;
 }
 
-export async function executeFunction(functionName, args) {
+export function getCurrentOrganization(): OrganizationInfo {
+    const salidaConfig = executeShell( 'sf config get target-org --json' );
+    const salidaConfigJson: SFConfigGetValue = JSON.parse(salidaConfig);
+    const targetOrg =  salidaConfigJson.result[0];
+
+    const salidaOrgList = executeShell( 'sf org list --json' );
+    const salidaOrgListJson:OrganizationResults = JSON.parse(salidaOrgList);
+    
+    for ( const orgType in salidaOrgListJson.result ) {
+        for ( const orgObject of salidaOrgListJson.result[orgType] ) {
+            if ( orgObject.alias === targetOrg.value ) {
+                if ( orgObject?.isExpired === true ) {
+                    throw new Error(`La scratch ${orgObject.alias} ha expirado!`);
+                }  
+                return orgObject;
+            }
+        }
+    }
+    throw new Error(`No se encontro la organizacion ${targetOrg.value} verifique que este activa con: sf org list. `);
+}
+
+// type: 'scratchOrgs', 'sandboxes', others
+export function getOrganizationObject(alias: string, type = 'scratchOrgs'):OrganizationInfo {
+    const salida = executeShell( 'sf org list --json' );
+    const salidaJson:OrganizationResults = JSON.parse(salida);
+    const orgObject =  salidaJson.result[type].filter( scratch => scratch.alias === alias )[0];
+    if ( orgObject?.isExpired === true ) {
+        throw new Error(`La scratch ${orgObject.alias} ha expirado!`);
+    }  
+    return orgObject;
+}
+
+export function getTargetOrg() {
+    const salida = executeShell( 'sf force config get target-org --json' );
+    const salidaJson:SFConfigGetValue = JSON.parse(salida);
+    return salidaJson.result[0].value;
+}
+
+export function getBranchName(): string {
+    try {
+        return  executeShell( "git branch --show-current" );
+    } catch (error) {
+        console.log(error);
+    }
+    return '';
+}
+export async function executeFunction(functionName: string, args?: StepArguments) {
     let returnValue = false;
     if ( typeof taskFunctions[functionName] === 'function' ) {       
         if ( args && typeof args === 'object' ) {
-            let mergedArgs = context.mergeArgs(args);
+            let mergedArgs: StepArguments = context.mergeArgs(args);
             if ( !Array.isArray(mergedArgs) ) {
                 const paramNames = getParams(taskFunctions[functionName]);
                 mergedArgs = createArray(paramNames, mergedArgs );
@@ -147,26 +196,26 @@ export async function executeFunction(functionName, args) {
     return returnValue;  
 }
 
-export function executeShell(command ) {
+export function executeShell(command: string ) {
     try {
         const buffer = execSync( command ) ;
         const salida = buffer.toString().trim();
         return ( salida.endsWith("\n") ? salida.slice(0, -1) : salida );
-     } catch (error) {
-        return false;
+     } catch  {
+        return '';
      }     
 }
 
 function getFilesChanged() {
-    let files = [];
-    const salida = executeShell( 'git diff origin/main --raw' ) ; 
+    const files = [];
+    const salida = executeShell( 'git diff origin/main --raw' ); 
     for ( const line of salida.split('\n') ) {
         files.push(line.split(/[ |\t]/)[5]);
     }
     return files;
 }
 
-export const taskFunctions = {   
+export const taskFunctions: { [s: string]: AnyValue } = {   
 
     async docProcess() { 
         if ( !context.process ) {
@@ -195,8 +244,8 @@ export const taskFunctions = {
         return await this.validateScratch();
     },
 
-    validateScratch() {
-        const salida = executeShell( "sf project retrieve preview" ) ;
+    async validateScratch() {
+        const salida = executeShell( "sf project retrieve preview" );
         context.salida = salida;
         const noHayCambios = salida.indexOf('No files will be deleted') !== -1 && salida.indexOf('No files will be retrieved') !== -1 && salida.indexOf('No conflicts found') !== -1;
         // Probar de bajarlos // sf project retrieve start
@@ -210,7 +259,7 @@ export const taskFunctions = {
         }
         const message = await askForCommitMessage();
         executeShell( `git add --all` );
-        const salidaCommit = executeShell( `git commit -m ${message}` );
+        executeShell( `git commit -m ${message}` );
         return await this.checkCommitPending();
     },
     async publishBranch() {
@@ -226,10 +275,13 @@ export const taskFunctions = {
 
     },
     async createPullRequest() {
+        if ( context.gitApi === undefined || context.branchName === undefined || context.issueNumber === undefined ) {
+            return false;
+        }
         try {
-            context.issueFromBranch(branchName);
-            const pullRequest = await context.gitApi.createPullRequest( branchName, `resolves #${context.issueNumber} `, 'AI not implemented yet' );             
-            return pullRequest.number ? true : false;
+            context.issueFromBranch(context.branchName);
+            const result = await context.gitApi.createPullRequest( context.branchName, `resolves #${context.issueNumber} `, 'AI not implemented yet' );             
+            return result;
         } catch (error) {
             console.log(error);
         }
@@ -237,96 +289,64 @@ export const taskFunctions = {
         return false;
 
     },
- 
-    getCurrentOrganization() {
-        const salidaConfig = executeShell( 'sf config get target-org --json' ) ;
-        const salidaConfigJson = JSON.parse(salidaConfig);
-        const targetOrg =  salidaConfigJson.result[0];
-
-        const salidaOrgList = executeShell( 'sf org list --json' ) ;
-        const salidaOrgListJson = JSON.parse(salidaOrgList);
-        
-        for ( const orgType in salidaOrgListJson.result ) {
-            for ( const orgObject of salidaOrgListJson.result[orgType] ) {
-                if ( orgObject.alias === targetOrg.value ) {
-                    if ( orgObject?.isExpired === true ) {
-                        throw new Error(`La scratch ${scratch.alias} ha expirado!`);
-                    }  
-                    return orgObject;
-                }
-            }
-        }
-        throw new Error(`No se encontro la organizacion ${targetOrg.value} verifique que este activa con: sf org list. `);
-    },
-
-    // type: 'scratchOrgs', 'sandboxes', others
-    getOrganizationObject(alias, type = 'scratchOrgs') {
-        const salida = executeShell( 'sf org list --json' ) ;
-        const salidaJson = JSON.parse(salida);
-        const orgObject =  salidaJson.result[type].filter( scratch => scratch.alias === alias )[0];
-        if ( orgObject?.isExpired === true ) {
-            throw new Error(`La scratch ${scratch.alias} ha expirado!`);
-        }  
-        return orgObject;
-    },
-
-    getTargetOrg() {
-        const salida = executeShell( 'sf force config get target-org --json' ) ;
-        const salidaJson = JSON.parse(salida);
-        return salidaJson.result[0].value;
-    },
-    
+     
     cancelIssue() {
         console.log('Not implemented');
+        return false;
     },
     deployIssue() {
         console.log('Not implemented');
+        return false;
     },
     rollbackIssue() {
         console.log('Not implemented');
+        return false;
     },
-    async createIssue(title, label) {
-        const issueNumber = await context.gitApi.createIssue(title, 'Backlog', label );
+    async createIssue(title: string, label: string): Promise<boolean> {
+        if ( context.projectApi === undefined ) {
+            return false;
+        }
+        const issueNumber = await context.projectApi.createIssue(title, 'Backlog', label );
         if ( issueNumber) {
             console.log(`Se creao el issue ${issueNumber}`);
             return true;
         }
         return false;
     },
-    async createTemplate(template, folder, name, identifier) {
+    async createTemplate(template: string, folder: string, name: string, identifier: string) {
         const filename = name.toLocaleLowerCase().replaceAll(' ', '-') +  '.md';
         createTemplate( '.', 'md', template, filename, folder, { name, identifier });
         return true;
     },
     
-    async validateIssue(issueNumber, states) {        
-        const currentState = await context.gitApi.getIssueState(issueNumber);        
+    async validateIssue(issueNumber: number, states: string) {        
+        if ( context.projectApi === undefined ) {
+            return false;
+        }
+        const issue = await context.projectApi.getIssueObject(issueNumber);        
+        if ( !issue.state ) {
+            return false;
+        }
         const arrayStates = states.toLocaleLowerCase().replace(' ', '').split(',');
-        return arrayStates.includes(currentState.toLocaleLowerCase().replace(' ', ''));
+        return arrayStates.includes(issue.state.toLocaleLowerCase().replace(' ', ''));
     },
     
-    getBranchName() {
-        try {
-            return  executeShell( "git branch --show-current" ) ;
-        } catch (error) {
-        }
-    },
-
-    async validaNoseaBranchActual(newBranchName) {
+    async validaNoseaBranchActual(newBranchName: string): Promise<boolean> {
         return this.getBranchName() !== newBranchName;
     },
 
     
-    async checkCommitPending() {
+    async checkCommitPending(): Promise<boolean> {
         try {
             const cambios = executeShell( "git status --porcelain=v1" ) ;
             context.salida = cambios;
             return cambios == '' ;
         } catch (error) {
+            console.log(error);
         }
         return false;
     },
-    async createBranch() {
+    async createBranch(): Promise<boolean> {
         try {
             const newBranchName = context.newBranchName;
             executeShell( `git checkout -b ${newBranchName} origin/main` ) ;
@@ -351,29 +371,41 @@ export const taskFunctions = {
         return false;
     },
     
-    async moveIssue(issueNumber, state) {
-        const result = await context.gitApi.moveIssue(issueNumber, state);    
+    async moveIssue(issueNumber: number, state: string): Promise<boolean> {
+        if ( context.projectApi === undefined ) {
+            return false;
+        }
+        const result = await context.projectApi.moveIssue(issueNumber, state);    
         return result;
     },
     
-    async assignBranchToIssue(issueNumber, newBranchName) {
-        const commitSha = executeShell( `git rev-parse --verify main` ) ; 
+    async assignBranchToIssue(issueNumber: number, newBranchName: string): Promise<boolean>  {
+        if ( context.gitApi === undefined ) {
+            return false;
+        }
+        const commitSha = executeShell( `git rev-parse --verify main` ); 
         const result = await context.gitApi.assignBranchToIssue(issueNumber,newBranchName, commitSha);
         return result;
     },    
 
     
-    async assignIssueToMe(issueNumber) {
-        const result = await context.gitApi.assignIssueToMe(issueNumber);    
+    async assignIssueToMe(issueNumber: number): Promise<boolean>  {
+        if ( !context.projectApi ){
+            return false;
+        }
+        const result = await context.projectApi.assignIssueToMe(issueNumber);    
         return result;
         
     },    
 
-    async viewIssue(issueNumber) {
-        const result = await context.gitApi.getIssue(issueNumber);
+    async viewIssue(issueNumber: number): Promise<boolean>  {
+        if ( !context.projectApi ){
+            return false;
+        }
+        const result = await context.projectApi.getIssueObject(issueNumber);
         // Branch    
-        if ( result.linkedBranches.nodes.lenght > 0  ) {
-            console.log( result.linkedBranches.nodes[0].ref.name );
+        if ( result.branch  ) {
+            console.log( result.branch );
         } else {
             console.log( 'sin branch' );
         }
@@ -381,8 +413,8 @@ export const taskFunctions = {
         // Labels
         if ( result.labels ) {
             const labels = [];
-            for ( const label of result.labels.nodes){
-                labels.push ( getColored(label.name, label.color) );
+            for ( const label of result.labels){
+                labels.push ( getColored(label, 'cyan') );
             }    
         
             console.log( labels.join( ' ' ) );
@@ -392,21 +424,19 @@ export const taskFunctions = {
         if ( result.body ) {
             console.log( result.body);
         }
-    
-        // Comments
-        if ( result.comments ) {
-            console.log( result.comments);
-        }
-    
+        
         return true;
     },
 
-    async checkIssueType(issueNumber) {
-        const issue = await context.gitApi.getIssueObject(issueNumber);
+    async checkIssueType(issueNumber: number): Promise<boolean>  {
+        if ( !context.projectApi ){
+            return false;
+        }
+        const issue = await context.projectApi.getIssueObject(issueNumber);
         // Setea el issueType segun el issue
         try {
             let newIssueType = 'feature';
-            if ( issue.labels?.length > 0 ) {
+            if ( issue.labels && issue.labels?.length > 0 ) {
                 if ( issue.labels.includes('documentation') ) {
                     newIssueType = 'doc';
                 } else if ( issue.labels.includes('automation') ) {

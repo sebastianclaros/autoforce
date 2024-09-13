@@ -1,44 +1,83 @@
-import { executeShell, taskFunctions } from "./taskFunctions.mjs"
-import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems } from "./util.mjs";
-import {GitHubApi} from "./github-graphql.mjs";
-import {GitLabApi} from "./gitlab-graphql.mjs";
+import { executeShell, getOrganizationObject, getCurrentOrganization, getBranchName, getTargetOrg } from "./taskFunctions.js"
+import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems } from "./util.js";
+import {GitHubApi} from "./github-graphql.js";
+import {GitLabApi} from "./gitlab-graphql.js";
 import prompts from "prompts";
 import matter from 'gray-matter';
 import fs from "fs";
-const filterProcesses = (fullPath) =>  fullPath.endsWith(".md"); // && !fullPath.endsWith("intro.md") 
+import type { PromptChoices } from "../types/helpers/context.js";
+import type { IProcessHeader, Processes, AnyValue, IProcessInfo, ObjectRecord, IObjectRecord } from "../types/auto.js";
+import type { TaskArguments, TaskArgument, StepArguments } from "../types/helpers/tasks.js";
+import { logError } from "./color.js";
 
-class Context {
+const filterProcesses: (fullPath: string) => boolean = (fullPath) =>  fullPath.endsWith(".md"); // && !fullPath.endsWith("intro.md") 
+const ISSUES_TYPES = [ { value: 'feature', title: 'feature' }, { value: 'bug', title: 'bug' }, { value: 'documentation', title: 'documentation' }, { value: 'automation', title: 'automation' }];
+const CONFIG_FILE = process.cwd() + '/.autoforce.json';
+
+
+export async function createConfigurationFile() {
+    console.log('Preguntar por GitHub o GitLab');
+    console.log('Chequear las variables de entorno');
+    console.log('Tema proyecto guardar la referencia');
+    console.log('Genera documentacion');
+    console.log('Direccion de las carpetas');
+
+    const config = { projectNumber: 1}
+    
+    try {
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
+    } catch {
+      throw new Error(`No se pudo guardar la configuracion en ${CONFIG_FILE}`  );
+    }
+
+    return true;
+  }
+  
+class Context implements IObjectRecord {
+    [s: string]: AnyValue | undefined;
+
     isGitApi = false;
+    gitApi: IGitApi | undefined;
+    projectApi: IProjectApi | undefined;
     sfInstalled = true; 
     sfToken = true;
 
-    branchName;
-    issueNumber;
-    issueType;
+    branchName: string | undefined;
+    issueNumber: number | undefined;
+    issueType: string | undefined;
 
-    _process;
-    _processesHeader;
+    _process: string | undefined;
+    _processesHeader: Record<string, IProcessHeader> | undefined;
 
-    _newIssueNumber;
-    _newIssueType;
-    newBranchName;
+    _newIssueNumber: number | undefined;
+    _newIssueType: string | undefined;
+    newBranchName: string | undefined;
     
     defaultDias = 7
-    permissionSet;
-    issueTitle;
+    permissionSet: string | undefined;
+    issueTitle: string | undefined;
     isVerbose = false;
     projectPath = process.cwd();
-    _scratch;
+    _scratch: OrganizationInfo | undefined;
+    _branchScratch: OrganizationInfo | undefined;
     existNewBranch = false; 
+    _targetOrg: string | undefined;
 
-    // Repository
-    repositoryUrl;
-    repositoryType;
-    repositoryOwner;
-    repositoryRepo;
+    // Documentacion
+    processes: Processes | undefined;   
+    // Ultima salida del shell
+    salida = '';
+
+    // Git Repository
+    repositoryUrl: string | undefined;
+    repositoryType: string | undefined;
+    repositoryOwner: string | undefined;
+    repositoryRepo: string | undefined;
+    // Project Reference    
+    projectNumber: number | undefined;
     
     loadGitApi() {
-        if ( !this.repositoryOwner ||  !this.repositoryRepo) {
+        if ( !this.repositoryOwner ||  !this.repositoryRepo || !this.repositoryUrl) {
             throw new Error("Falta agregue repository en el package.json para obtener el Owner or Repo");
         }
 
@@ -46,7 +85,7 @@ class Context {
         const isGitlab = this.repositoryUrl.indexOf('gitlab') > 0 ;
 
         if ( isGithub && process.env.GITHUB_TOKEN ) {
-            const token = process.env.GITHUB_TOKEN ;
+            const token = process.env.GITHUB_TOKEN ;            
             this.gitApi = new GitHubApi(token, this.repositoryOwner, this.repositoryRepo, this.projectNumber);
             this.isGitApi = true;
         }
@@ -56,7 +95,6 @@ class Context {
             this.gitApi = new GitLabApi(token, this.repositoryOwner, this.repositoryRepo, this.projectNumber);
             this.isGitApi = true;
         }
-
     }
 
     loadPackage() {
@@ -70,17 +108,17 @@ class Context {
                     this.repositoryUrl = packageJson.repository.url;
                     this.repositoryType = packageJson.repository.type;
                     // Ver de sacar repo y owner
-                    if ( this.repositoryUrl.includes("github.com") ) {
+                    if ( this.repositoryUrl && this.repositoryUrl.includes("github.com") ) {
                         const repositoryArray =  this.repositoryUrl.split('github.com/');
                         [this.repositoryOwner, this.repositoryRepo] = repositoryArray[1].split('/');
                     }
-                } else {
-                    this.repositoryUrl = packageJson.repository;
+                } else if ( typeof packageJson.repository === 'string' ) {
+                    this.repositoryUrl = packageJson.repository as string;
                     const repositoryArray =  this.repositoryUrl.split(':');
                     this.repositoryType = repositoryArray[0];
                     [this.repositoryOwner, this.repositoryRepo] = repositoryArray[1].split('/');
                 }
-                if ( this.repositoryRepo.endsWith('.git') ) {
+                if ( this.repositoryRepo && this.repositoryRepo.endsWith('.git') ) {
                     this.repositoryRepo = this.repositoryRepo.replace('.git', '');
                 }
             } 
@@ -92,36 +130,39 @@ class Context {
     }
 
     loadConfig() {
-        const filename =  this.projectPath +  "/.autoforce.json";
-        const content = fs.readFileSync(filename, "utf8");
+        if ( !fs.existsSync(CONFIG_FILE) ) {
+            logError('Aun no ha configurado autoforce, lo puede hacer mas tarde manualmente creando .autoforce.json en el root del proyecto o asisitido corriendo yarn init autoforce. O bien puede hacerlo ahora mismo :) ' );
+            createConfigurationFile();
+            return; 
+        }
+        const content = fs.readFileSync(CONFIG_FILE, "utf8");
         try {
-          const config = JSON.parse(content);
+          const config: ObjectRecord = JSON.parse(content);
           for( const key in config ) {
-            this.set( key, config[key] );
+            this.set(key, config[key] );
           }
-        } catch (error) {
-          throw new Error(`Verifique que el ${filename} sea json valido`  );
+        } catch {
+          throw new Error(`Verifique que el ${CONFIG_FILE} sea json valido`  );
         }
       
     }
 
-
     init() {
         // Busca variables de entorno    
-        this.loadConfig();
         this.loadPackage();
+        this.loadConfig();
         this.loadGitApi();
         // 
-        this.branchName = taskFunctions.getBranchName();
+        this.branchName = getBranchName();
 
-        if ( this.branchName ) {
+        if ( typeof this.branchName === 'string') {
             this.issueFromBranch(this.branchName);
         }
     }
 
     get targetOrg() {
         if ( !this._targetOrg ) {
-            this._targetOrg= taskFunctions.getTargetOrg();        
+            this._targetOrg= getTargetOrg();        
         }
         return this._targetOrg;
     }
@@ -130,29 +171,25 @@ class Context {
         return typeof this._branchScratch !== 'undefined';        
     }
     get branchScratch() {    
-        if ( !this._branchScratch ) {
-            this._branchScratch= taskFunctions.getOrganizationObject(this.branchName);
+        if ( !this._branchScratch && this.branchName ) {
+            this._branchScratch= getOrganizationObject(this.branchName);
         }
         return this._branchScratch;
     }
 
-    getProcessHeader(fullpath) {
+    getProcessHeader(fullpath: string) {
         const fileContents = fs.readFileSync(fullpath, 'utf8');
         const { data } = matter(fileContents);
         return data;
     }
-    addProcessMetadata(component, items) {
+    addProcessMetadata(component: string, items: string[]) {
         if ( !this.process ) {
             throw new Error(`No hay proceso configurado`  );
         }
-        const filename =  this.projectPath +  "/.autoforce.json";
-        const content = fs.readFileSync(filename, "utf8");
+        const content = fs.readFileSync(CONFIG_FILE, "utf8");
         try {
           const config = JSON.parse(content);
-          const processes = config.processes;
-          if ( !processes )  {
-            processes = {};
-          }
+          const processes: Processes = config.processes || {};
           if ( !processes[this.process] )  {
             processes[this.process] = {};
           }
@@ -162,15 +199,14 @@ class Context {
           addNewItems(processes[this.process][component], items) ;
           config.processes = processes;
 
-          fs.writeFileSync(filename, JSON.stringify(config, null, 2) );
+          fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
 
-        } catch (error) {
+        } catch {
           throw new Error(`No se pudo guardar la metadata`  );
         }
-
     }
 
-    get processesHeader() {
+    get processesHeader(): Record<string,IProcessHeader> {
         if ( !this._processesHeader ) {
             this._processesHeader = {};
             const folders = getFiles(process.cwd() + "/docs", filterDirectory, true, ['diccionarios']);
@@ -189,16 +225,16 @@ class Context {
     }
 
     // TODO: merge con getProcessFromDocs
-    getProcessMetadata() {
+    getProcessMetadata(): IProcessInfo[] {
         const folders = getFiles(process.cwd() + "/docs", filterDirectory, true, ['diccionarios']);
-        let retArray = [];
+        const retArray = [];
         for ( const folder of folders )  {
             const fullpath = `${process.cwd()}/docs/${folder}`;
             const processes = getFiles( fullpath, filterProcesses );
             for ( const process of processes ) {
                 const header = this.getProcessHeader(fullpath + "/" + process); 
                 const processKey = convertNameToKey(header.slug || header.title || process);
-                if ( this.processes[processKey] ) {
+                if ( this.processes && this.processes[processKey] ) {
                     retArray.push( 
                         {
                             folder,
@@ -212,25 +248,25 @@ class Context {
         return retArray;
     }
 
-    getModules() {
+    getModules(): string[] {
         return getFiles(process.cwd() + "/docs", filterDirectory, false, ['diccionarios']);
     }
 
-    get modules() {
+    get modules(): PromptChoices {
         return this.getModules().map( module => { return { value: module, title: module } } ) ;    
     }
 
-    get existScratch() {
+    get existScratch(): boolean {
         return typeof this.scratch !== 'undefined';
     }
-    get scratch() {
+    get scratch(): OrganizationInfo {
         if ( !this._scratch ) {
-            this._scratch= taskFunctions.getCurrentOrganization();
+            this._scratch= getCurrentOrganization();
         }
         return this._scratch;
     }
 
-    async validate(guards) {
+    async validate(guards: string[] ) {
         for(const guard of guards) {
             const value = await this.get(guard);
             if ( !value ) {
@@ -239,18 +275,18 @@ class Context {
         }
     }
 
-    issueFromBranch(branchName) {
+    issueFromBranch(branchName: string) {
         const branchSplit = branchName.split("/");
         if ( branchSplit.length > 1 ) {
             this.issueType = branchSplit[0];
-            if ( !isNaN(branchSplit[1]) ) {
+            if ( !Number.isNaN(Number(branchSplit[1])) ) {
                 this.issueNumber = parseInt( branchSplit[1] );
             } else {
 //                    [this.issueNumber, this.issueTitle] = branchSplit[1].split() // /^([^ -]+)[ -](.*)$/.exec( branchSplit[1]).slice(1);
             }
         }
     }
-    branchNameFromIssue (issueType, issueNumber, title) {
+    branchNameFromIssue (issueType: string, issueNumber: number, title?: string ) {
         let baseName =  issueType + '/' + issueNumber;
         if ( title ) {
             baseName += ' - ' + title.replaceAll(' ', '-');
@@ -283,9 +319,11 @@ class Context {
         }
     }
     setNewBranchName() {
-        this.newBranchName =  this.branchNameFromIssue(this.newIssueType, this.newIssueNumber );
-        const salida =  executeShell(`git show-ref refs/heads/${this.newBranchName}`);
-        this.existNewBranch = salida && (salida.includes(this.newBranchName));        
+        if ( this.newIssueType && this.newIssueNumber ) {
+            this.newBranchName =  this.branchNameFromIssue(this.newIssueType, this.newIssueNumber );
+            const salida =  executeShell(`git show-ref refs/heads/${this.newBranchName}`);
+            this.existNewBranch = typeof salida === 'string'  && (salida.includes(this.newBranchName));                    
+        }
     }
     async askFornewBranchName() { 
         if ( !this.newBranchName ) {
@@ -317,7 +355,7 @@ class Context {
         this._process = value;
     }
 
-    getProcessFromTitle(title) {
+    getProcessFromTitle(title: string) {
         const desde = title.indexOf('[');
         const hasta = title.indexOf(']', desde);
         if ( desde !== -1 && hasta !== -1 ) {
@@ -338,8 +376,8 @@ class Context {
     }
 
     async askForprocess() {
-        if ( !this.issueTitle && this.issueNumber ) {
-            const issue = await this.gitApi.getIssueObject(this.issueNumber);
+        if ( this.projectApi && !this.issueTitle && this.issueNumber ) {
+            const issue = await this.projectApi.getIssueObject(this.issueNumber);
             this.issueTitle =  issue.title;
         }
         if ( this.issueTitle ) {
@@ -368,22 +406,25 @@ class Context {
               name: "newIssueType",
               initial: "feature",
               message: "Por favor ingrese el type del issue?",
-              choices: [ "feature", "bug", "documentation", "automation" ]
+              choices: ISSUES_TYPES 
             }
           ]);
         return answer.newIssueType;
     }
 
-    convertToArrayOfInputs(inputs) {
-        let inputsArray = [];
+    convertToArrayOfInputs(inputs: TaskArguments): TaskArgument[] {
+        let inputsArray: TaskArgument[] = [];
         if ( Array.isArray(inputs) ) {
             // Si viene los args como ['name1', 'names] lo convierte a [{name: 'name1'}, {name: 'name2'}]
             inputsArray = inputs.map( input => { return { name: input, type: 'text', message: `Por favor ingrese ${input}?` }});
         } else {
             // Si viene args como objeto { name1: {...}, name2: {...}} lo convierte a [{name: name1...}, {name: name2...}]
-            for (let key in inputs) {
-                const initial = inputs[key].default ? this.merge(inputs[key].default): undefined;
-                inputsArray.push( {name: key, type: 'text', initial, message: `Por favor ingrese ${key}?`, ...inputs[key]} ) ;
+            for (const key in inputs) {
+                let initial = typeof inputs[key].default == 'string' ? inputs[key].default: undefined;
+                if ( initial !== undefined ) {
+                    initial = this.merge(initial);
+                }
+                inputsArray.push( {...{name: key, type: 'text', initial, message: `Por favor ingrese ${key}?`}, ...inputs[key]} ) ;
             }
         }
         return inputsArray;
@@ -402,57 +443,68 @@ class Context {
             process.exit(-1);
         }
     }
-    mergeArgs(args) {
+    mergeArgs(args: StepArguments): StepArguments {
         if ( Array.isArray(args) ) {
-            let argsArray = [];
+            const argsArray = [];
             for ( const argName of args) {
-                argsArray.push( this.merge(argName) );
+                if ( typeof argName === 'string' ) {
+                    argsArray.push( this.merge(argName) );
+                }
             }
             return argsArray;
         } else if ( typeof args === 'object' ) {
-            let argsObject = {};    
+            const argsObject: Record<string, string> = {};    
             for ( const argName in args) {
                 argsObject[argName] =  this.merge(args[argName]);
             }
             return argsObject;
         }
-        return null;
+        throw new Error(`Los argumentos ${args} son incompatibles para el merge`);
     }
 
-    async askForArguments(inputs) {
+    async askForArguments(inputs: TaskArguments) {
         // unifica los dos tipos de inputs (array y objeto) en un array de inputs
         const inputsArray = this.convertToArrayOfInputs(inputs);
 
         for(const input of inputsArray) {
-            const hasValue = await this.get(input.name);
+            const hasValue = await this.get(input.name as string);
             if ( !hasValue ) {
-                const answer = await prompts([this.mergeArgs(input)], {onCancel: this.askForExit});
-                this[input.name] =  answer[input.name];
+                const answer = await prompts([input], {onCancel: this.askForExit});
+                this[input.name as keyof IObjectRecord] =  answer[input.name as string];
             }
         }
     }
-    setObject( obj ) {
+    setObject( obj: ObjectRecord ) {
         for ( const field in obj ) {
-            this[field] = obj[field];    
+            Object.defineProperty(this, field, obj[field]);
         }
     }
 
-    set( field, value ) {
-        this[field] = value;    
+    set(key: keyof IObjectRecord, value: AnyValue): void {
+        try {
+            this[key] = value;
+        } catch {
+            throw new Error(`No se puede setear el ${key} con el valor ${value} en context`);
+        }
     }
-
+    
     // Devuelve el valor o hace un askFor si esta vacio
-    async get(variable) { 
-        if ( !this[variable] ) {
-            const askForMethod = 'askFor' + variable;
-            if ( this[askForMethod] && typeof this[askForMethod] == 'function' ) {
-                this[variable] = await this[askForMethod]();
+    async get(key: string): Promise<AnyValue> {
+        try {
+            const value = this[key as keyof IObjectRecord];
+            if ( !value ) {
+                const askForMethod = 'askFor' + key as keyof IObjectRecord;
+                if ( this[askForMethod] && typeof this[askForMethod] == 'function' ) {
+                    this[key as keyof IObjectRecord] = await this[askForMethod]();
+                }
             }
+            return this[key as keyof IObjectRecord];
+        } catch {
+            throw new Error(`No se puedo obtener la propiedad ${key} en context`);
         }
-        return this[variable];
     }
-
-    merge(text) {
+    
+    merge(text: string): string {
         if( typeof text != 'string' || text.indexOf('${') === -1 ) {
             return text; 
         }
@@ -465,19 +517,26 @@ class Context {
                 
         // si es un texto con merges 
         for (const match of matches) {
-            const mergedValue = this[match[1]];
+            const mergedValue = this[match[1] as keyof IObjectRecord];
             // si es una sola variable
             if (match.index == 0 && text === match[0]) {
-                return mergedValue;
+                return mergedValue as string;
             }
-            text = text.replace(match[0], mergedValue);
-
+            if ( typeof mergedValue === 'string') {
+                text = text.replace(match[0], mergedValue);
+            } else if ( typeof mergedValue === 'number' || typeof mergedValue === 'boolean') {
+                text = text.replace(match[0], mergedValue.toString());
+            } else {
+                throw new Error(`La propiedad '${match[1]}' del objeto context no es mergeable`);
+            }
         }
 
         return text; 
     }
+
+
 }
 
-const context= new Context();
+const context = new Context();
 context.init();
 export default context;

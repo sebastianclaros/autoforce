@@ -1,5 +1,6 @@
-import sf from "./connect.mjs";
-import templateGenerator from "./template.mjs";
+import { ObjectRecord, DocumentationModule } from "../types/auto.js";
+import sf from "./connect.js";
+import templateGenerator from "./template.js";
 const templateEngine = templateGenerator("dictionary", "md");
 
 import {
@@ -9,9 +10,11 @@ import {
   splitFilename,
   DICTIONARY_FOLDER,
   DOCS_FOLDER
-} from "./util.mjs";
+} from "./util.js";
 
-async function getContext(clases) {
+
+
+async function getMetadata(clases: string[]): Promise<IApexClass[]> {
   try {
     await sf.connect();
     const classRecords = await sf.getClasses(clases);
@@ -19,11 +22,11 @@ async function getContext(clases) {
   } catch (e) {
     console.error(e);
   }
+  return [];
 }
 
-export function getClasses(files) {
-  let contexts;
-  const items = new Set();
+export function getClasses(files: string[]): string[] {
+  const items: Set<string> = new Set();
 
   for ( const file of files ) {
     if (file.indexOf("/classes/") > 0 ) {
@@ -34,17 +37,17 @@ export function getClasses(files) {
   return [...items.values()];
 }
 
-function classLink() {
+function classLink(this: ObjectRecord) {
   const name = this.Name;
   return `./diccionarios/classes/${name}`;
 }
 
-function classLinkGraph() {
+function classLinkGraph(this: ObjectRecord) {
   const name = this.Name;
   return `./diccionarios/classes/${name}`;
 }
 
-function linkToType() {
+function linkToType(this: string) {
   const dictionaryClasses = getNamesByExtension(
     DICTIONARY_FOLDER + "/classes",
     "md"
@@ -60,11 +63,11 @@ function linkToType() {
   return fullType;
 }
 
-function filterByPublic() {
+function filterByPublic(this: ObjectRecord) {
   return this.modifiers.includes("public") || this.modifiers.includes("global");
 }
 
-function scopeModifiers() {
+function scopeModifiers(this: ObjectRecord) {
   const modifiers = [];
 
   if (this.modifiers.includes("public") || this.modifiers.includes("global")) {
@@ -79,11 +82,11 @@ function scopeModifiers() {
   return modifiers.join(" ");
 }
 
-function modifiers() {
+function modifiers(this: ObjectRecord) {
   const modifiers = [];
 
   if (this.modifiers.includes("abstract")) {
-    attributes.push(`*`);
+    modifiers.push(`*`);
   }
   if (this.modifiers.includes("override")) {
     modifiers.push(`o`);
@@ -94,63 +97,64 @@ function modifiers() {
   return modifiers.join(" ");
 }
 
-function classAttributes() {
+function classAttributes(this: IApexClass) {
   const attributes = [];
 
   // if (this.isValid === "true") {
   //   attributes.push(`![Encripted](/img/password_60.png)`);
   // }
-  if (this.SymbolTable.tableDeclaration.modifiers.includes("static")) {
+  const systemTable = this.SymbolTable as ISystemTable;
+  if (systemTable.tableDeclaration.modifiers.includes("static")) {
     attributes.push(`$`);
   }
   if (
-    this.SymbolTable.tableDeclaration.modifiers.includes("public") ||
-    this.SymbolTable.tableDeclaration.modifiers.includes("global")
+    systemTable.tableDeclaration.modifiers.includes("public") ||
+    systemTable.tableDeclaration.modifiers.includes("global")
   ) {
     attributes.push(`+`);
   }
-  if (this.SymbolTable.tableDeclaration.modifiers.includes("private")) {
+  if (systemTable.tableDeclaration.modifiers.includes("private")) {
     attributes.push(`-`);
   }
-  if (this.SymbolTable.tableDeclaration.modifiers.includes("protected")) {
+  if (systemTable.tableDeclaration.modifiers.includes("protected")) {
     attributes.push(`#`);
   }
-  if (this.SymbolTable.tableDeclaration.modifiers.includes("global")) {
+  if (systemTable.tableDeclaration.modifiers.includes("global")) {
     attributes.push(`G`);
   }
 
   return attributes.join(" ");
 }
 
-function getInnerClasses(classes) {
-  let ret = [];
+function getInnerClasses(classes: IApexClass[]): IApexClass[] {
+  let ret:IApexClass[] = [];
 
   for (const clase of classes) {
-    if (clase.SymbolTable?.innerClasses?.length > 0) {
-      const innerClases = clase.SymbolTable.innerClasses.map((subclase) => {
+    if ( clase.SymbolTable && (clase.SymbolTable as ISystemTable).innerClasses.length > 0) {
+      const innerClases: IApexClass[] = (clase.SymbolTable as ISystemTable).innerClasses.map((subclase) => {
         subclase.namespace =
           (clase.namespace ? clase.namespace + "." : "") + clase.Name;
         return {
-          Name: subclase.name,
+          Name: subclase.Name,
           type: "inner",
           namespace: subclase.namespace,
-          SymbolTable: subclase
+          SymbolTable: [subclase]
         };
       });
       ret = ret.concat(innerClases);
-      const subInner = getInnerClasses(clase.SymbolTable.innerClasses);
+      const subInner = getInnerClasses((clase.SymbolTable as ISystemTable).innerClasses);
       ret = ret.concat(subInner);
     }
   }
   return ret;
 }
 
-export async function executeClasses(items, filename, folder) {
+async function executeClasses(items: string[], filename: string, folder: string): Promise<void> {
   if (items.length === 0) {
     return;
   }
   // Busca la metadata
-  let contexts = await getContext(items );
+  let contexts = await getMetadata(items );
   if (!contexts || contexts.length === 0) {
     return;
   }
@@ -164,7 +168,9 @@ export async function executeClasses(items, filename, folder) {
         modifiers,
         linkToType,
         classLinkGraph,
-        filterByPublic
+        filterByPublic,
+        classAttributes,
+        scopeModifiers
       }
     });
     templateEngine.save(context.Name, DICTIONARY_FOLDER + "/classes");
@@ -172,7 +178,7 @@ export async function executeClasses(items, filename, folder) {
 
   // Saca las innerClass y las pone como clases con namespace
   const innerClasses = getInnerClasses(contexts);
-  let namespaces = {};
+  const namespaces: Record<string, string[]> = {};
   if (innerClasses.length > 0) {
     templateEngine.read("class-inner");
     for (const context of innerClasses) {
@@ -181,14 +187,15 @@ export async function executeClasses(items, filename, folder) {
       });
       templateEngine.save(
         context.Name,
-        DICTIONARY_FOLDER + "/classes/" + context.namespace,
-        { create: true }
+        DICTIONARY_FOLDER + "/classes/" + context.namespace
       );
       // arma un mapa de namespace con el array de sus innerclases
-      if (namespaces[context.namespace] === undefined) {
-        namespaces[context.namespace] = [context.Name];
-      } else {
-        namespaces[context.namespace].push(context.Name);
+      if ( context.namespace ){
+        if (namespaces[context.namespace] === undefined) {
+          namespaces[context.namespace] = [context.Name];
+        } else {
+          namespaces[context.namespace].push(context.Name);
+        }
       }
     }
     contexts = contexts.concat(innerClasses);
@@ -213,10 +220,12 @@ export async function executeClasses(items, filename, folder) {
 }
 
 
-export default {
+const classModule: DocumentationModule = {
   getItems: getClasses,
   execute: executeClasses
 }
+
+export default classModule;
 
 /**
  * TODO

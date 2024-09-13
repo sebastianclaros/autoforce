@@ -11,8 +11,7 @@ node_modules
 .npm
 
 # Dist
-dist
-
+lib
 
 # npm package lock
 package-lock.json

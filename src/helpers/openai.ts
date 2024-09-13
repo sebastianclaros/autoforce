@@ -4,20 +4,22 @@ const client = new OpenAI({
   apiKey: process.env['OPENAI_API_KEY'], // This is the default and can be omitted
 });
 
-async function getCommitMessage() {
+export async function getCommitMessage(): Promise<string|null> {
     if ( process.env['OPENAI_API_KEY'] ) {        
-        const params = {
+        const params:  OpenAI.Chat.ChatCompletionCreateParams = {
           messages: [{ role: 'user', content: 'Say this is a test' }],
           model: 'gpt-3.5-turbo',
         };
-        const chatCompletion = await client.chat.completions.create(params);
+        const chatCompletion: OpenAI.Chat.ChatCompletion = await client.chat.completions.create(params);
+		return chatCompletion.choices[0].message?.content;
     }
+	return null;
 }
 
-getCommitMessage();
 
 
 /*
+// getCommitMessage();
 {
 				model,
 				messages: [

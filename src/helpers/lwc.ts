@@ -1,5 +1,6 @@
-import sf from "./connect.mjs";
-import templateGenerator from "./template.mjs";
+import { DocumentationModule } from "../types/auto.js";
+import sf from "./connect.js";
+import templateGenerator from "./template.js";
 const templateEngine = templateGenerator("dictionary", "md");
 
 import {
@@ -7,21 +8,21 @@ import {
   splitFilename,
   DICTIONARY_FOLDER,
   DOCS_FOLDER
-} from "./util.mjs";
+} from "./util.js";
 
-async function getContext(lwc) {
+async function getMetadata(lwc: string[]): Promise<ILwc[]> {
   try {
     await sf.connect();
     const lwcRecords = await sf.getLwc(lwc);
     return Array.isArray(lwcRecords) ? lwcRecords: [lwcRecords];
   } catch (e) {
-    splitFilename;
     console.error(e);
   }
+  return [];
 }
 
-export function getLwc(files) {
-  const items = new Set();
+function getLwc(files: string[]) {
+  const items: Set<string> = new Set();
 
   for ( const file of files ) {
     if (file.indexOf("/lwc/") > 0 ) {
@@ -32,13 +33,12 @@ export function getLwc(files) {
   return [...items.values()];
 }
 
-export async function executeLwc( items, filename, folder) {
-  if (items.length === 0) {
+async function executeLwc( items: string[], filename: string, folder: string): Promise<void> {
+    if (items.length === 0) {
     return;
   }
   // Busca la metadata
-  let contexts = await getContext(items );
-
+  const contexts = await getMetadata(items );
 
   if (!contexts || contexts.length === 0) {
     return;
@@ -58,7 +58,7 @@ export async function executeLwc( items, filename, folder) {
   templateEngine.read("lwcs");
 
 
-  const lwcContext = { lwc: contexts, namespaces };
+  const lwcContext = { lwc: contexts };
   templateEngine.render(lwcContext, {
     helpers: {}
   });
@@ -67,7 +67,10 @@ export async function executeLwc( items, filename, folder) {
 }
 
 
-export default {
+
+const lwcModule: DocumentationModule = {
   getItems: getLwc,
   execute: executeLwc
 }
+
+export default lwcModule;

@@ -1,14 +1,16 @@
-import sf from "./connect.mjs";
-import templateGenerator from "./template.mjs";
+import { CustomObject } from "jsforce/lib/api/metadata.js";
+import { ObjectRecord, DocumentationModule } from "../types/auto.js";
+import sf from "./connect.js";
+import templateGenerator from "./template.js";
 const templateEngine = templateGenerator("dictionary", "md");
 
 import {
   sortByLabel,
   DICTIONARY_FOLDER,
   DOCS_FOLDER,
-} from "./util.mjs";
+} from "./util.js";
 
-async function getContext(objetos) {
+async function getMetadata(objetos: string[]): Promise<CustomObject[]> {
   try {
     await sf.connect();
     const objects = await sf.customObjects(objetos);
@@ -17,21 +19,22 @@ async function getContext(objetos) {
   } catch (e) {
     console.error(e);
   }
+  return [];
 }
 
-function descriptionFormula(a) {
+function descriptionFormula(this: ObjectRecord) {
   return this.description?.replaceAll(/[\n\r]/g, "<br/>");
 }
 
-function isManaged() {
+function isManaged(this: ObjectRecord) {
   return this.fullName.split("__").length == 3;
 }
 
-function isMetadataFormula() {
+function isMetadataFormula(this: ObjectRecord) {
   return this.fullName?.endsWith("__mdt") || this.customSettingsType;
 }
 
-function attributesFormula() {
+function attributesFormula(this: ObjectRecord) {
   const attributes = [];
   // Object Attributes
   if (this.enableHistory === "true") {
@@ -68,7 +71,7 @@ function attributesFormula() {
   }
   return attributes.join(" ");
 }
-function typeFormula() {
+function typeFormula(this: ObjectRecord) {
   if (this.formula) {
     return `Formula(${this.type})`;
   }
@@ -85,8 +88,8 @@ function typeFormula() {
   return this.type;
 }
 
-export function getObjects(files) {
-  const items = new Set();
+function getObjects(files: string[]): string[] {
+  const items: Set<string> = new Set();
 
   for ( const file of files ) {
     let desde = file.indexOf("/objects/");
@@ -101,12 +104,12 @@ export function getObjects(files) {
 }
 
 
-export async function executeObjects(items, filename, folder) {
+async function executeObjects(items: string[], filename: string, folder: string): Promise<void> {
   if (items.length === 0) {
     return;
   }
   // Busca la metadata
-  const contexts = await getContext(items);
+  const contexts = await getMetadata(items);
   if (!contexts || contexts.length === 0) {
     return;
   }
@@ -129,11 +132,13 @@ export async function executeObjects(items, filename, folder) {
   templateEngine.render(objectContext, {
     helpers: { isManaged, isMetadataFormula, attributesFormula }
   });
-  //const { folder, filename } = splitFilename(DEFAULT_INTRO, WORKING_FOLDER);
   templateEngine.save(filename, DOCS_FOLDER + "/" + folder);
 }
 
-export default {
+
+const objectModule: DocumentationModule = {
   getItems: getObjects,
   execute: executeObjects
 }
+
+export default objectModule;

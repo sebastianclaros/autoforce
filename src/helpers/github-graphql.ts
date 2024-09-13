@@ -1,11 +1,11 @@
 import { graphql } from "@octokit/graphql";
 
-export class GitHubApi {
+export class GitHubApi implements IGitApi, IProjectApi {
   repoVar;
   projectNumber; 
   graphqlAuth;
   
-  constructor(token, owner, repo, projectNumber) {
+  constructor(token: string, owner: string, repo: string, projectNumber?: number) {
     this.repoVar = { owner, repo };
     this.projectNumber = projectNumber;
     this.graphqlAuth = graphql.defaults({
@@ -16,22 +16,28 @@ export class GitHubApi {
     })
   }
 
-  async  getUser() {
+  async  getUser() {    
     const query = `{
       viewer {
         login
         id
       }
     }`;
-    const {viewer } = await this.graphqlAuth(query);
+    const {viewer }: {viewer: { login: string, id: number}} = await this.graphqlAuth(query);
     return viewer;
   }
-
-  async getColumnValueMap() {
+  async  getRepository(label?: string) {
     const query = `
-        query getFieldOptions($owner:String!, $repo: String!, $projectNumber: Int!) {
+        query getRepo($owner:String!, $repo: String!, $projectNumber: Int!, ${label ?  '$label: String!': ''} ) {
           repository(owner: $owner, name: $repo) {
-            projectV2(number: $projectNumber) {
+            id
+            ${ label ? 
+              `label(name: $label) {
+                id
+              }` :''
+            }
+            projectV2( number: $projectNumber ) {
+              id
               field(name: "Status") {
                 ... on ProjectV2SingleSelectField {
                   id
@@ -46,16 +52,11 @@ export class GitHubApi {
           }
         }
     `; 
-
-    const { repository } = await this.graphqlAuth(query, { projectNumber: this.projectNumber,...this.repoVar});
-    let mapValues = {}
-    for ( const option of repository.projectV2.field.options ) {
-      mapValues[option.name] = option.id;
-    }
-    return mapValues;
+    const { repository }: {repository: { id: string, label?: { id: string}, projectV2: { id: string, field: { id: string, name: string, options: { name: string, id: string}[] }}}} = await this.graphqlAuth(query, { label, projectNumber: this.projectNumber,...this.repoVar});
+    return repository;
   }
 
-  async createPullRequest(branchName, title, body) {
+  async createPullRequest(branchName: string, title: string, body: string): Promise<boolean> {
     const repository = await this.getRepository();
     const repositoryId = repository.id;
     const headRefName = 'main';
@@ -75,20 +76,49 @@ export class GitHubApi {
         ) {
           pullRequest {
             id
-            number
           }
         }
       }`;
     try {
-      const {createPullRequest} = await this.graphqlAuth(mutationPullRequest, { baseRefName, headRefName, headRepositoryId: repositoryId, repositoryId, title, body });
-      return createPullRequest.pullRequest;
+      const {createPullRequest}: { createPullRequest: { pullRequest: { id: string} }} = await this.graphqlAuth(mutationPullRequest, { baseRefName, headRefName, headRepositoryId: repositoryId, repositoryId, title, body });
+      return createPullRequest.pullRequest ? true : false;
     } catch (error) {
       console.log(error);
-      return false;
     }
+    return false;
+  }
+ 
+
+  async getColumnValueMap(){
+    const query = `
+        query getFieldOptions($owner:String!, $repo: String!, $projectNumber: Int!) {
+          repository(owner: $owner, name: $repo) {
+            projectV2(number: $projectNumber) {
+              field(name: "Status") {
+                ... on ProjectV2SingleSelectField {
+                  id
+                  name
+                  options {
+                    name
+                    id
+                  }
+                }                
+              }
+            }
+          }
+        }
+    `; 
+
+    const { repository }: {repository: { id: string, projectV2: { id: string, field: { id: string, name: string, options: { name: string, id: string}[] }}}} = await this.graphqlAuth(query, { projectNumber: this.projectNumber,...this.repoVar});
+    const mapValues: Record<string, string> = {}
+    for ( const option of repository.projectV2.field.options ) {
+      mapValues[option.name] = option.id;
+    }
+    return mapValues;
   }
 
-  async createIssue(title, columnName, label, milestone, body ) {
+
+  async createIssue(title: string, state?: string, label?: string, milestone?: string, body?: string ) {
     const user = await this.getUser();
     const repository = await this.getRepository(label);
     const repositoryId = repository.id;
@@ -112,9 +142,9 @@ export class GitHubApi {
           }
         }
       }`;
-    const { createIssue } = await this.graphqlAuth(mutationIssue, { labelId,  body, assignId: user.id,  projectId, repositoryId, title, label: label?  [label]: null });
+    const { createIssue }: {createIssue: { issue: { id: string, number: number } }} = await this.graphqlAuth(mutationIssue, { labelId,  body, assignId: user.id,  projectId, repositoryId, title, label: label?  [label]: null });
     const issue = createIssue.issue;
-    if ( !columnName || !issue.number) {
+    if ( !state || !issue.number) {
       return issue.number;
     }
     const mutationItem = `
@@ -131,12 +161,12 @@ export class GitHubApi {
           }
         }
       }`;
-    const { addProjectV2ItemById } = await this.graphqlAuth(mutationItem, { projectId, contentId: issue.id });  
+    const { addProjectV2ItemById }: {addProjectV2ItemById: { item: { id: string } }} = await this.graphqlAuth(mutationItem, { projectId, contentId: issue.id });  
     const itemId = addProjectV2ItemById.item.id;
 
     const fieldId = repository.projectV2.field.id;
     const mapValues = await this.getColumnValueMap();
-    const columnValue = mapValues[columnName]; 
+    const columnValue = mapValues[state]; 
     const mutationColumn = `
     mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $columnValue: String!) {
       updateProjectV2ItemFieldValue(
@@ -150,18 +180,20 @@ export class GitHubApi {
         clientMutationId
       }
     }`;
-    const {updateProjectV2ItemFieldValue } = await this.graphqlAuth(mutationColumn, { projectId, itemId, fieldId, columnValue });
-
+    const {updateProjectV2ItemFieldValue }: {updateProjectV2ItemFieldValue: { clientMutationId: string }} = await this.graphqlAuth(mutationColumn, { projectId, itemId, fieldId, columnValue });
+    if ( !updateProjectV2ItemFieldValue.clientMutationId ) {
+      return 0;
+    }
     return issue.number;  
   }
 
-  async  moveIssue(issueNumber, columnName) {
+  async  moveIssue(issueNumber: number, state: string): Promise<boolean> {
     const issue = await this.getIssue(issueNumber);
     const itemId = issue.projectItems.nodes[0].id;
     const projectId = issue.projectItems.nodes[0].project.id;  
     const fieldId = issue.projectItems.nodes[0].fieldValueByName.field.id;
     const mapValues = await this.getColumnValueMap();
-    const columnValue = mapValues[columnName]; 
+    const columnValue = mapValues[state]; 
     const mutation = `
     mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $columnValue: String!) {
       updateProjectV2ItemFieldValue(
@@ -177,11 +209,11 @@ export class GitHubApi {
         }
       }
     }`;
-    const {updateProjectV2ItemFieldValue } = await this.graphqlAuth(mutation, { projectId, itemId, fieldId, columnValue });
+    const {updateProjectV2ItemFieldValue }: {updateProjectV2ItemFieldValue: { projectV2Item: { id: string } }} = await this.graphqlAuth(mutation, { projectId, itemId, fieldId, columnValue });
     return updateProjectV2ItemFieldValue?.projectV2Item ? true: false ;  
   }
 
-  async assignIssueToMe(issueNumber) {
+  async assignIssueToMe(issueNumber: number): Promise<boolean> {
     const user = await this.getUser();
     const issue = await this.getIssue(issueNumber);
     const mutation = `
@@ -198,11 +230,11 @@ export class GitHubApi {
         } 
       }    
     `;
-    const {addAssigneesToAssignable } = await this.graphqlAuth(mutation, { issueId: issue.id, userId: user.id });
+    const {addAssigneesToAssignable }: {addAssigneesToAssignable: { assignable: { assignees: { totalCount: number } } }} = await this.graphqlAuth(mutation, { issueId: issue.id, userId: user.id });
     return addAssigneesToAssignable.assignable.assignees.totalCount > 0 ;  
   }
 
-  async getCommit(commitSha) {
+  async getCommit(commitSha: string) {
     const query = `
       query getCommit($owner:String!, $repo: String!, $commitSha: String!) {
         repository(owner: $owner, name: $repo) {
@@ -214,12 +246,12 @@ export class GitHubApi {
               }
         }
       } `; 
-    const { repository } = await this.graphqlAuth(query, { commitSha,...this.repoVar});
+    const { repository }: {repository:{ object: { id: string; oid: string}}} = await this.graphqlAuth(query, { commitSha,...this.repoVar});
     return repository.object; 
   }
 
-  async assignBranchToIssue(issueNumber, branchName, commitSha) {
-    const issue = await this.getIssue(issueNumber);  
+  async assignBranchToIssue(issueNumber: number, branchName: string, commitSha: string) {
+    const issue = await this.getIssue(issueNumber);
     const commit = await this.getCommit(commitSha);
     const mutation = `
       mutation createLinkedBranch( $issueId: ID!, $oid: GitObjectID!, $branchName: String!) { 
@@ -234,85 +266,44 @@ export class GitHubApi {
           }
         }
       }`;
-    const {createLinkedBranch } = await this.graphqlAuth(mutation, { issueId: issue.id, oid: commit.oid, branchName });
+    const {createLinkedBranch }: {createLinkedBranch: { issue: { id: string } }} = await this.graphqlAuth(mutation, { issueId: issue.id, oid: commit.oid, branchName });
     console.log(createLinkedBranch);
     return createLinkedBranch?.issue?.id ? true: false ;  
   }
 
-  async getValidateIssueColumn(issueNumber, columnName) {
-      const issue = await this.getIssue(issueNumber);
-  }
-
-
-  async getIssueState(issueNumber){
+  async getIssueState(issueNumber: number){
     const issue = await this.getIssue(issueNumber);
     return issue.projectItems?.nodes[0]?.fieldValueByName?.name;
   }
 
-  async getMyIssues(issueNumber){
-
-  }
-
-  getIssueName(title) {
+  getIssueName(title: string) {
     return title.toLowerCase().replaceAll(' ', '-');
   }
 
-  async  getIssueObject(issueNumber){
-    const result = await this.getIssue(issueNumber);
-    const addFields = {};
-    addFields.name = this.getIssueName(result.title);
-    if ( result.linkedBranches.nodes.length > 0 ) {
-      addFields.branch = result.linkedBranches.nodes[0].ref.name;
+  async  getIssueObject(issueNumber: number) {
+    const issue = await this.getIssue(issueNumber);
+    const issueObject: IIssueObject = { title: issue.title};
+    issueObject.name = this.getIssueName(issue.title);
+    if ( issue.linkedBranches.nodes.length > 0 ) {
+      issueObject.branch = issue.linkedBranches.nodes[0].ref.name;
     }
-    delete result.linkedBranches;
 
-    if ( result.projectItems.nodes.length > 0 ) {
-      addFields.state = result.projectItems.nodes[0].fieldValueByName.name;
+    if ( issue.projectItems.nodes.length > 0 ) {
+      issueObject.state = issue.projectItems.nodes[0].fieldValueByName.name;
     }
-    delete result.projectItems;
 
-    if ( result.labels.nodes.length > 0 ) {
-      addFields.labels = [];
-      for ( const node of result.labels.nodes ) {
-        addFields.labels.push(node.name);
+    if ( issue.labels.nodes.length > 0 ) {
+      issueObject.labels = [];
+      for ( const node of issue.labels.nodes ) {
+        issueObject.labels.push(node.name);
       }
     }
-    delete result.labels;
 
-    return { ...addFields,  ...result};
+    return issueObject;
   }
 
- async  getRepository(label){
-  const query = `
-      query getRepo($owner:String!, $repo: String!, $projectNumber: Int!, ${label ?  '$label: String!': ''} ) {
-        repository(owner: $owner, name: $repo) {
-          id
-          ${ label ? 
-            `label(name: $label) {
-              id
-            }` :''
-          }
-          projectV2( number: $projectNumber ) {
-            id
-            field(name: "Status") {
-              ... on ProjectV2SingleSelectField {
-                id
-                name
-                options {
-                  name
-                  id
-                }
-              }                
-            }
-          }
-        }
-      }
-  `; 
-  const { repository } = await this.graphqlAuth(query, { label, projectNumber: this.projectNumber,...this.repoVar});
-  return repository;
-}
 
-async getIssue(issueNumber){
+async getIssue(issueNumber: number){
   const query = `
       query getIssue($owner:String!, $repo: String!, $issueNumber: Int!) {
         repository(owner: $owner, name: $repo) {
@@ -357,25 +348,9 @@ async getIssue(issueNumber){
       }
   `; 
 
-  const { repository } = await this.graphqlAuth(query, { issueNumber: parseInt(issueNumber),...this.repoVar});
+  const { repository }: { repository: { issue: { id: string, title: string, labels: { nodes: { name: string, color: string}[] }, projectItems: { nodes: { id: string, project: { id: string },  fieldValueByName: { name: string, id: string, field: { id: string }} }[] }, linkedBranches: { nodes: { ref: { id: string, name: string } } [] } } } } = await this.graphqlAuth(query, { issueNumber,...this.repoVar});
 
   return repository.issue;
 }
 
-async  getIssuesByState(state){
-    // let issues = [];
-    // const result = await octokit.request(`GET /repos/${owner}/${repo}/issues`, {
-    //     headers: {
-    //     'X-GitHub-Api-Version': '2022-11-28'
-    // }
-    // });
-    // if ( result.status === 200 ) {
-    //     for ( const issue of result.data) {
-    //         const labels = issue.labels.map( label=> label.name );
-    //         const assignees = issue.assignees.map( assignee => assignee.login );
-    //         issues.push( { body: issue.body, labels, assignees, state: issue.state, number: issue.number, title: issue.title } );
-    //     }
-    // }
-    // return issues;
-  }
 }

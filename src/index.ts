@@ -1,5 +1,3 @@
-// import main from "./auto.mjs"
+import main from "./auto.js"
 
-// main();
-
-console.log("Hello World!");
+main();

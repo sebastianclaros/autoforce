@@ -1,9 +1,10 @@
-import context from "./context.mjs";
-import jsforce from "jsforce";
+import { CustomObject } from "jsforce/lib/api/metadata.js";
+import context from "./context.js";
+import jsforce, { Connection } from "jsforce";
 const DEBUG = process.env.DEBUG || false;
 const API_VERSION = "60.0";
 
-let conn;
+let conn: Connection;
 
 async function connect() {
   const orgObject = context.scratch;
@@ -61,13 +62,12 @@ function check() {
   return conn.accessToken ? true : false;
 }
 
-async function getOmni(fullNames) {}
+// async function getOmni(fullNames: string[]) {}
+// 
+// async function getIP(fullNames: string[]) {}
 
-async function getIP(fullNames) {}
-
-async function getDependencies(listOfIds, filterTypes) {
-  const ids = "('" + listOfIds.join("' , '") + "')";
-  const up = await conn.tooling
+async function getDependencies(listOfIds: string[] ): Promise<Dependencies> {
+  const up: IMetadataComponentDependency[]  = await conn.tooling
     .sobject("MetadataComponentDependency")
     .find({ RefMetadataComponentId: listOfIds }, [
       "RefMetadataComponentId",
@@ -75,7 +75,7 @@ async function getDependencies(listOfIds, filterTypes) {
       "MetadataComponentName",
       "MetadataComponentType"
     ]);
-  const down = await conn.tooling
+  const down: IMetadataComponentDependency[] = await conn.tooling
     .sobject("MetadataComponentDependency")
     .find({ MetadataComponentId: listOfIds }, [
       "MetadataComponentId",
@@ -83,8 +83,9 @@ async function getDependencies(listOfIds, filterTypes) {
       "RefMetadataComponentName",
       "RefMetadataComponentType"
     ]);
-  let dependencies = {};
-  for (const record in up) {
+
+  const dependencies: Dependencies = {};
+  for (const record of up) {
     const entry = {
       Id: record.MetadataComponentId,
       name: record.MetadataComponentName,
@@ -96,7 +97,7 @@ async function getDependencies(listOfIds, filterTypes) {
     }
     item.childs.push(entry);
   }
-  for (const record in down) {
+  for (const record of down) {
     const entry = {
       Id: record.RefMetadataComponentId,
       name: record.RefMetadataComponentName,
@@ -117,13 +118,13 @@ function expiredSession() {
   );
   process.exit(-1);
 }
-async function getLwc(fullNames) {
+async function getLwc(fullNames: string[]): Promise<ILwc[]> {
   /**
 Archivos, JS => JSDoc
 */
   //console.log( JSON.stringify(conn.version) );
   try {
-    const bundle = await conn.tooling
+    const bundle:ILightningComponentBundle[] = await conn.tooling
       .sobject("LightningComponentBundle")
       .find({ MasterLabel: fullNames }, [
         "MasterLabel",
@@ -133,8 +134,8 @@ Archivos, JS => JSDoc
         "Id"
       ]);
     const listOfIds = bundle.map((item) => item.Id);
-
-    const listOfResources = await conn.tooling
+    if ( listOfIds.length > 0 ) {
+      const listOfResources:ILightningComponentResource[]  = await conn.tooling
       .sobject("LightningComponentResource")
       .find({ LightningComponentBundleId: listOfIds }, [
         "LightningComponentBundleId",
@@ -142,46 +143,51 @@ Archivos, JS => JSDoc
         "FilePath",
         "Source"
       ]);
-    // Convierte los resources en un mapa con clave el Id y como valor la lista de sus resources
-    let resources = {};
-    for (const resource in listOfResources) {
-      let lwcId = resource.LightningComponentBundleId;
-      if (!resources[lwcId]) {
-        resources[lwcId] = [resource];
-      } else {
-        resources[lwcId].push(resource);
-      }
-    }
-    // Saca las dependencias
-    let dependencies = getDependencies(listOfIds);
 
-    const metadata = bundle.map((item) => {
-      const lwc = {
-        Name: MasterLabel,
-        resources: resources[item.Id],
-        dependencies: dependencies[item.Id],
-        ...item.Metadata
-      };
-    });
-    console.log(metadata);
-    return metadata;
+      // Convierte los resources en un mapa con clave el Id y como valor la lista de sus resources
+      const resources: Record<string, ILightningComponentResource[]> = {};
+      for (const resource of listOfResources) {
+        const lwcId = resource.LightningComponentBundleId;
+        if (!resources[lwcId]) {
+          resources[lwcId] = [resource];
+        } else {
+          resources[lwcId].push(resource);
+        }
+      }
+      // Saca las dependencias
+      const dependencies = await getDependencies(listOfIds);
+    
+      const metadata: ILwc[] = bundle.map((item) => {
+        return {
+          Name: item.MasterLabel,
+          resources: resources[item.Id],
+          dependencies: dependencies[item.Id],
+          ...item.Metadata
+        };
+      });
+      return metadata;
+    }
   } catch (e) {
-    if (e.name == "INVALID_SESSION_ID" || e.name == "sf:INVALID_SESSION_ID") {
-      expiredSession();
+    if (e instanceof Error) {
+      if (e.name == "INVALID_SESSION_ID" || e.name == "sf:INVALID_SESSION_ID") {
+        expiredSession();
+      }
+
+      if (DEBUG) {
+        console.log(e);
+      }
+      const msg = ( e.name == 'ERROR_HTTP_420' ) ? 'El accesstoken y el instance url en el .env parece que no coinciden, verifique con sf org display' : `Error buscando metadata de los lwc ${fullNames}. ERR-NAME: ${e.name}`;
+      throw msg;
     }
-    if (DEBUG) {
-      console.log(e);
-    }
-    const msg = ( e.name == 'ERROR_HTTP_420' ) ? 'El accesstoken y el instance url en el .env parece que no coinciden, verifique con sf org display' : `Error buscando metadata de los lwc ${fullNames}. ERR-NAME: ${e.name}`;
-    throw msg;
   }
+  return [];
 }
 
-async function getClasses(fullNames) {
+async function getClasses(fullNames: string[]): Promise<IApexClass[]> {
   try {
     // > tooling.sobject('ApexClass').find({ Name: "AsistenciasController" })
     const classNames = fullNames.map((clase) => clase.replace(".cls", ""));
-    const metadata = await conn.tooling
+    const metadata: IApexClass[] = await conn.tooling
       .sobject("ApexClass")
       .find({ Name: classNames }, [
         "Name",
@@ -198,22 +204,25 @@ async function getClasses(fullNames) {
     }
     return metadata;
   } catch (e) {
-    if (e.name == "INVALID_SESSION_ID" || e.name == "sf:INVALID_SESSION_ID") {
-      expiredSession();
+    if (e instanceof Error) {
+        if (e.name == "INVALID_SESSION_ID" || e.name == "sf:INVALID_SESSION_ID") {
+        expiredSession();
+      }
+      if (DEBUG) {
+        console.log(e);
+      }
+      const msg = ( e.name == 'ERROR_HTTP_420' ) ? 'El accesstoken y el instance url en el .env parece que no coinciden, verifique con sf org display' : `Error buscando metadata de las clases ${fullNames}. ERR-NAME: ${e.name}`;
+      throw msg;
     }
-    if (DEBUG) {
-      console.log(e);
-    }
-    const msg = ( e.name == 'ERROR_HTTP_420' ) ? 'El accesstoken y el instance url en el .env parece que no coinciden, verifique con sf org display' : `Error buscando metadata de las clases ${fullNames}. ERR-NAME: ${e.name}`;
-    throw msg;
   }
+  return [];
 }
 
-async function customObjects(fullNames) {
+async function customObjects(fullNames: string[]): Promise<CustomObject[]> {
   try {
-    let metadata;
+    let metadata: CustomObject[];
     if (fullNames.length <= 10) {
-      metadata = await conn.metadata.read("CustomObject", fullNames);
+      metadata = await conn.metadata.read("CustomObject", fullNames) as CustomObject[];
     } else {
       metadata = [];
       do {
@@ -228,15 +237,18 @@ async function customObjects(fullNames) {
     }
     return metadata;
   } catch (e) {
-    if (e.name == "INVALID_SESSION_ID" || e.name == "sf:INVALID_SESSION_ID") {
-      expiredSession();
+    if (e instanceof Error) {
+      if (e.name == "INVALID_SESSION_ID" || e.name == "sf:INVALID_SESSION_ID") {
+        expiredSession();
+      }
+      if (DEBUG) {
+        console.log(e);
+      }
+      const msg = ( e.name == 'ERROR_HTTP_420' ) ? 'El accesstoken y el instance url en el .env parece que no coinciden, verifique con sf org display' : `Error buscando metadata de los objetos ${fullNames}. ERR-NAME: ${e.name}`;
+      throw msg;
     }
-    if (DEBUG) {
-      console.log(e);
-    }
-    const msg = ( e.name == 'ERROR_HTTP_420' ) ? 'El accesstoken y el instance url en el .env parece que no coinciden, verifique con sf org display' : `Error buscando metadata de los objetos ${fullNames}. ERR-NAME: ${e.name}`;
-    throw msg;
   }
+  return [];
 }
 
 export default {
@@ -245,7 +257,8 @@ export default {
   customObjects,
   getDependencies,
   getClasses,
-  getLwc,
-  getOmni,
-  getIP
+  getLwc
 };
+
+// getIP
+// getOmni

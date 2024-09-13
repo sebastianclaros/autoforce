@@ -9,9 +9,9 @@ En este repo las tareas buscan automatizar o integrar el siguiente tipo gestione
 - Branching Strategy en Git (Github o Gitlab)
 - Armado de ambiente de desarrollo (Salesforce)
 - Gestion de proyecto (Github projects, Gitlab projects o Jira).
-- Documentacion (implementacion propia de Docusaurus para Salesforce)
-- Calidad de codigo
-- Uso de IA
+- Documentacion (Github pages o GitLab pages. Version mejorada con docusaurus)
+- Calidad de codigo (PMD)
+- Uso de IA ( OpenAI, )
 
 ## Instalación
 
@@ -20,3 +20,11 @@ yarn add -D
 ```
 
 ## Usos
+
+
+```
+    "@docusaurus/core": "^3.0.1",
+    "@docusaurus/preset-classic": "^3.0.1",
+    "@docusaurus/theme-mermaid": "^3.0.1",
+    "docusaurus-plugin-drawio": "^0.4.0",
+```
