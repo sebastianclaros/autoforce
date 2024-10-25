@@ -9,7 +9,7 @@ import {
   verFecha,
   splitFilename,
   DICTIONARY_FOLDER,
-  DOCS_FOLDER
+  TEMPLATES_FOLDER
 } from "./util.js";
 
 
@@ -216,7 +216,7 @@ async function executeClasses(items: string[], filename: string, folder: string)
       classLink
     }
   });
-  templateEngine.save(filename, DOCS_FOLDER + "/" + folder);
+  templateEngine.save(filename, TEMPLATES_FOLDER + "/" + folder);
 }
 
 

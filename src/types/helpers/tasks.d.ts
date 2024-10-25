@@ -15,7 +15,7 @@
     guards: string[];
     arguments: TaskArguments;
     description: string;
-    steps: Array<IStepTask | IStepFunction | IStepCommand>;
+    steps: Step[];
   }
   interface IStep {
     name?: string;
@@ -30,16 +30,13 @@
 type Step = IStepTask | IStepFunction | IStepCommand;
 
 interface IStepTask extends IStep {
-  type: 'task',
-  subtask?: string;  
+  subtask: string;  
 }
 interface IStepFunction extends IStep {
-  type: 'function',
-  function?: string;
+  function: string;
 }
 interface IStepCommand extends IStep {
-  type: 'command',
-  command?: string;
+  command: string;
 }
 
 interface ICriteria {

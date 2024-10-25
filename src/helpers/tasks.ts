@@ -1,14 +1,17 @@
-import context from "./context.js";
+import context, { initializeContext } from "./context.js";
 import { logError, logStep } from "./color.js";
 import fs from "fs";
-import { getFiles, filterJson } from "./util.js";
-import { validateCommand, validateFunction, executeFunction, executeCommand } from "./taskFunctions.js";
+import { getFiles, filterJson, searchInFolderHierarchy } from "./util.js";
+import { validateCommand, validateFunction, executeFunction, executeCommand, taskFunctions } from "./taskFunctions.js";
 import prompts from "prompts";
-import { ICriteria, IStep, ITask, Step } from "../types/helpers/tasks.js";
+import { ICriteria, IStep, IStepCommand, IStepFunction, IStepTask, ITask, Step } from "../types/helpers/tasks.js";
 import { AnyValue, CommandOptions, ObjectRecord } from "../types/auto.js";
-export const TASKS_FOLDER = process.cwd() + "/commands/tasks";
-export const SUBTASKS_FOLDER = process.cwd() + "/commands/subtasks";
-export const NEW_FOLDER = process.cwd() + "/commands/new";
+import { fileURLToPath } from 'url';
+const COMMAND_FOLDER = searchInFolderHierarchy('commands', fileURLToPath(import.meta.url));
+export const TASKS_FOLDER =  `${COMMAND_FOLDER}/tasks`;
+export const SUBTASKS_FOLDER = `${COMMAND_FOLDER}/subtasks`;
+export const NEW_FOLDER = `${COMMAND_FOLDER}/new`;
+
 
 export function getTaskFolder(command: string) {
   const folders: Record<string, string> = {
@@ -65,6 +68,7 @@ export async function helpTask(task: ITask): Promise<boolean> {
   return true;
 }
 export function validateTask(task: ITask) {
+  initializeContext();
   if ( task.guards ) {
     // Valida que sea 
   }
@@ -79,12 +83,12 @@ export function validateTask(task: ITask) {
     }
   
     let validateStep = false;
-    if ( step.type === 'command' && step.command) {
-      validateStep = validateCommand( step.command, step.arguments );      
-    } else if ( step.type === 'function' && step.function  ) {
-      validateStep = validateFunction(step.function, step.arguments);
-    } else if ( step.type === 'task' && step.subtask ) {
-      const subtask = getTask(step.subtask, SUBTASKS_FOLDER);
+    if ( typeof (step as IStepCommand).command === 'string' ) {
+      validateStep = validateCommand( step as IStepCommand);      
+    } else if ( typeof (step as IStepFunction).function === 'string' ) {
+      validateStep = validateFunction(step as IStepFunction);
+    } else if ( typeof (step as IStepTask).subtask === 'string') {
+      const subtask = getTask( (step as IStepTask).subtask, SUBTASKS_FOLDER);
       validateStep = validateTask(subtask);
     } else {
       console.log('Step no tiene command ni function ni subtask');
@@ -97,6 +101,7 @@ export function validateTask(task: ITask) {
   return true;
 }
 export async function runTask(task: ITask, taskContext: CommandOptions, tabs = ''){
+  initializeContext();
   // Valida que este ya esten las variables de enotorno y  configuracion
   if ( task.guards ) {
     await context.validate(task.guards);
@@ -121,6 +126,7 @@ export async function runTask(task: ITask, taskContext: CommandOptions, tabs = '
 }
 
 export async function previewTask(task: ITask, tabs = '') {
+  initializeContext();
   logStep(`${task.name}: ${task.description}`, tabs );
     
   for ( const step of task.steps ) {
@@ -133,9 +139,9 @@ function previewStep(step: Step, tabs = '') {
     logStep(`Si ${step.criteria.field} ${step.criteria.operator || '=='} ${step.criteria.value}`, tabs );
     tabs += '\t';
   }
-  if ( step.type === 'task' &&  step.subtask ) {
+  if ( (step as IStepTask).subtask ) {
     tabs += '\t';
-    const subtask = getTask(step.subtask, SUBTASKS_FOLDER);
+    const subtask = getTask( (step as IStepTask).subtask, SUBTASKS_FOLDER);
     previewTask(subtask, tabs);
   } else {
     logStep(`${step.name}`, tabs );
@@ -154,13 +160,13 @@ export function createObject(fields: ObjectRecord, values: AnyValue[]) {
 }    
 
 async function runStep(step: Step, tabs: string) {
-  if ( step.type === 'command' && step.command) {
-    return executeCommand( step.command, step.arguments );
-  } else if ( step.type === 'function' && step.function  ) {
-    return await executeFunction(step.function, step.arguments);
-  } else if ( step.type === 'task' && step.subtask ) {
-    const subtask = getTask(step.subtask, SUBTASKS_FOLDER);
-    
+
+  if ( typeof (step as IStepCommand).command === 'string' ) {
+    return executeCommand(step as IStepCommand);
+  } else if ( typeof (step as IStepFunction).function === 'string' ) {
+    return await executeFunction(step as IStepFunction);
+  } else if ( typeof (step as IStepTask).subtask === 'string') {
+    const subtask = getTask((step as IStepTask).subtask, SUBTASKS_FOLDER);    
     let stepContext = context.mergeArgs(step.arguments);
     if ( Array.isArray(stepContext) ) {
       stepContext = createObject( subtask.arguments, stepContext);    
@@ -203,7 +209,10 @@ async function executeStep(step: Step, tabs: string) {
         logError(getStepError(step, stepName) , tabs );
         // Si tiene un custom handler cuando hay un error
         if( step.onError ) {
-          success = await executeFunction(step.onError);      
+          const errorHandler = taskFunctions[step.onError];
+          if ( typeof errorHandler === 'function' ) {
+            success = await errorHandler();
+          }
         }
       }
     } catch(error) {

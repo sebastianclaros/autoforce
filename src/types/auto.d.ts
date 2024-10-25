@@ -47,7 +47,8 @@ interface IProcessHeader extends Record<string, string> {
 }
 
 type AnyValue = number | string | boolean | object | function ;
-export type CommandFunction = (task: ITask, options: CommandOptions, tabs?: string) => Promise<boolean>;
+export type CommandFunction = () => Promise<boolean>;
+export type CommandTaskFunction = (task: ITask, options: CommandOptions, tabs?: string) => Promise<boolean>;
 type ObjectRecord = Record<string, AnyValue>; 
 interface IObjectRecord {
     [key: string]: AnyValue

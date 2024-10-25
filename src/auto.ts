@@ -1,31 +1,46 @@
 // Comandos validos
 import {createObject,  validateTask, getTasks, helpTask, runTask, getTaskFolder} from "./helpers/tasks.js";
-import { logError} from "./helpers/color.js";
-import {createConfigurationFile} from "./helpers/context.js";
-import prompts from "prompts";
-import type { CommandFunction, ConfigArguments } from "./types/auto.js";
 import { ITask } from "./types/helpers/tasks.js";
-const proxyCommnad: Record<string, CommandFunction> = {
+import { logError} from "./helpers/color.js";
+import prompts from "prompts";
+import type { CommandFunction, CommandTaskFunction,  ConfigArguments } from "./types/auto.js";
+import { createConfigurationFile } from "./helpers/util.js";
+
+const proxyCommand: Record<string, CommandFunction> = {
+    'version': showVersion, 
+    'config': createConfigurationFile
+}
+const taskCommand: Record<string, CommandTaskFunction> = {
     'help': helpTask, 
     'task': runTask,
     'new': runTask,
-    'config': createConfigurationFile,
     'subtask': runTask
 }
+
+async function  showVersion() {
+    console.log('AutoForce v0.1.4');
+    return true;
+}
+
 export default async function main() {
-    try {
+        try {
         const config = getConfigFromArgs(process.argv.slice(2));
-        const tasks = getTasks(config.taskFolder);
-        const taskName = await askForTaskName(config.taskName, tasks);
-        if ( taskName ) {        
-            const task = tasks[taskName];
-            const options = config.arguments && task.arguments ? {...config.options, ...createObject( task.arguments, config.arguments)} : config.options;
-            // Valida los json de task y subtask
-            if ( validateTask(task) ) {
-                await proxyCommnad[config.command](task, options );
-            } else {
-                logError('Verifique que los json de task y subtask esten validos');
+        const taskCommandKeys = Object.keys(taskCommand);
+        if ( taskCommandKeys.includes(config.command) ) {
+            const tasks = getTasks(config.taskFolder);
+            const taskName = await askForTaskName(config.taskName, tasks);
+            if ( taskName ) {        
+                const task = tasks[taskName];
+                const options = config.arguments && task.arguments ? {...config.options, ...createObject( task.arguments, config.arguments)} : config.options;
+                // Valida los json de task y subtask
+                if ( validateTask(task) ) {
+                    await taskCommand[config.command](task, options );
+                } else {
+                    logError('Verifique que los json de task y subtask esten validos');
+                }
             }
+        } else {
+            await proxyCommand[config.command]();
         }
     } catch(error) {
         if ( error instanceof Error ) {
@@ -48,7 +63,7 @@ export function getConfigFromArgs(processArgs: string[]): ConfigArguments {
     }
     // De acuerdo a args separa comando[help, preview, task o subtask]  de taskName 
     let currentArgument = args.shift();
-    const comandosValidos = Object.keys(proxyCommnad); 
+    const comandosValidos = [...Object.keys(proxyCommand), ...Object.keys(taskCommand)]; 
     if ( currentArgument && comandosValidos.includes(currentArgument)  ) {
         config.command = currentArgument;
         currentArgument = args.shift();

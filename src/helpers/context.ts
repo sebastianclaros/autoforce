@@ -1,6 +1,6 @@
 import { executeShell, getOrganizationObject, getCurrentOrganization, getBranchName, getTargetOrg } from "./taskFunctions.js"
-import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems } from "./util.js";
-import {GitHubApi} from "./github-graphql.js";
+import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems, CONFIG_FILE, createConfigurationFile } from "./util.js";
+//import {GitHubApi} from "./github-graphql.js";
 import {GitLabApi} from "./gitlab-graphql.js";
 import prompts from "prompts";
 import matter from 'gray-matter';
@@ -12,26 +12,6 @@ import { logError } from "./color.js";
 
 const filterProcesses: (fullPath: string) => boolean = (fullPath) =>  fullPath.endsWith(".md"); // && !fullPath.endsWith("intro.md") 
 const ISSUES_TYPES = [ { value: 'feature', title: 'feature' }, { value: 'bug', title: 'bug' }, { value: 'documentation', title: 'documentation' }, { value: 'automation', title: 'automation' }];
-const CONFIG_FILE = process.cwd() + '/.autoforce.json';
-
-
-export async function createConfigurationFile() {
-    console.log('Preguntar por GitHub o GitLab');
-    console.log('Chequear las variables de entorno');
-    console.log('Tema proyecto guardar la referencia');
-    console.log('Genera documentacion');
-    console.log('Direccion de las carpetas');
-
-    const config = { projectNumber: 1}
-    
-    try {
-        fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
-    } catch {
-      throw new Error(`No se pudo guardar la configuracion en ${CONFIG_FILE}`  );
-    }
-
-    return true;
-  }
   
 class Context implements IObjectRecord {
     [s: string]: AnyValue | undefined;
@@ -81,14 +61,14 @@ class Context implements IObjectRecord {
             throw new Error("Falta agregue repository en el package.json para obtener el Owner or Repo");
         }
 
-        const isGithub = this.repositoryUrl.indexOf('github') > 0 ;
+        //const isGithub = this.repositoryUrl.indexOf('github') > 0 ;
         const isGitlab = this.repositoryUrl.indexOf('gitlab') > 0 ;
 
-        if ( isGithub && process.env.GITHUB_TOKEN ) {
-            const token = process.env.GITHUB_TOKEN ;            
-            this.gitApi = new GitHubApi(token, this.repositoryOwner, this.repositoryRepo, this.projectNumber);
-            this.isGitApi = true;
-        }
+        //if ( isGithub && process.env.GITHUB_TOKEN ) {
+        //    const token = process.env.GITHUB_TOKEN ;            
+        //    this.gitApi = new GitHubApi(token, this.repositoryOwner, this.repositoryRepo, this.projectNumber);
+        //    this.isGitApi = true;
+        //}
 
         if ( isGitlab && process.env.GITLAB_TOKEN ) {
             const token = process.env.GITLAB_TOKEN ;
@@ -149,8 +129,8 @@ class Context implements IObjectRecord {
 
     init() {
         // Busca variables de entorno    
-        this.loadPackage();
         this.loadConfig();
+        this.loadPackage();
         this.loadGitApi();
         // 
         this.branchName = getBranchName();
@@ -533,10 +513,21 @@ class Context implements IObjectRecord {
 
         return text; 
     }
-
-
 }
 
 const context = new Context();
-context.init();
+let initialized = false;
+export function initializeContext() {
+    try {
+        if ( !initialized ) {
+            context.init();
+            initialized = true;
+        }
+    } catch (error) {
+        if ( error instanceof Error ) {
+            logError(error.message);
+        }
+        process.exit(1);
+    }
+}
 export default context;

@@ -1,7 +1,27 @@
 import fs from "fs";
-export const DOCS_FOLDER = process.cwd() + "/docs";
-export const DICTIONARY_FOLDER = process.cwd() + "/docs/diccionarios";
+import { fileURLToPath } from 'url';
+export const TEMPLATES_FOLDER = searchInFolderHierarchy('templates', fileURLToPath(import.meta.url));
+export const DICTIONARY_FOLDER = TEMPLATES_FOLDER + "/diccionarios";
 export const WORKING_FOLDER = process.env.INIT_CWD || ".";
+export const CONFIG_FILE = process.cwd() + '/.autoforce.json';
+
+export async function createConfigurationFile() {
+    console.log('Preguntar por GitHub o GitLab');
+    console.log('Chequear las variables de entorno');
+    console.log('Tema proyecto guardar la referencia');
+    console.log('Genera documentacion');
+    console.log('Direccion de las carpetas');
+
+    const config = { projectNumber: 1}
+    
+    try {
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
+    } catch {
+      throw new Error(`No se pudo guardar la configuracion en ${CONFIG_FILE}`  );
+    }
+
+    return true;
+  }
 
 export function sortByName(objA: {Name: string}, objB: {Name: string}) {
   return objA.Name > objB.Name ? 1 : objA.Name < objB.Name ? -1 : 0;
@@ -67,6 +87,21 @@ export function addNewItems(baseArray: string[], newArray: string[]) {
       baseArray.push(item);
     }
   }
+}
+
+export function searchInFolderHierarchy( element: string, parentFolder: string ): string {
+  if ( fs.existsSync( `${parentFolder}/${element}` )) {
+    return `${parentFolder}/${element}`;
+  } else {  
+    const lastIndex = parentFolder.lastIndexOf('/');
+    if ( lastIndex !== -1 ){
+      const newParentFolder = parentFolder.substring(0, lastIndex); 
+      if ( newParentFolder !== '' ) {
+        return searchInFolderHierarchy(element, newParentFolder);
+      }
+    }
+  }
+  return '';
 }
 
 export function getFiles(source: string, filter=(file:string):boolean=>file !== undefined, recursive = false, ignoreList: string[] = []) {

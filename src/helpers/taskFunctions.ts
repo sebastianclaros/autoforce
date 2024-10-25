@@ -5,7 +5,7 @@ import metadata from './metadata.js';
 import prompts from "prompts";
 import templateGenerator from "./template.js";
 import { getColored } from "./color.js";
-import type { StepArguments, TaskFunction } from "../types/helpers/tasks.js";
+import type { IStepCommand, IStepFunction, StepArguments, TaskFunction } from "../types/helpers/tasks.js";
 import { AnyValue, ObjectRecord } from "../types/auto.js";
 
 function createTemplate( templateFolder: string, templateExtension: string, template: string, filename: string, folder: string, context: ObjectRecord) {
@@ -44,10 +44,10 @@ function convertArgsToString(args: StepArguments) {
 
 }
 
-export async function executeCommand(command: string, args: StepArguments) {
+export async function executeCommand(step: IStepCommand) {
     try {
-        context.set('command', command + ' ' + convertArgsToString(args) );
-        execSync(command + ' ' + convertArgsToString(args), {stdio: 'inherit'});   
+        context.set('command', step.command + ' ' + convertArgsToString(step.arguments) );
+        execSync(step.command + ' ' + convertArgsToString(step.arguments), {stdio: 'inherit'});   
    
         return true;
     } catch {
@@ -55,18 +55,21 @@ export async function executeCommand(command: string, args: StepArguments) {
     }
 }
 
-export function validateCommand(command: string, args?: StepArguments) {
-    return true;
+export function validateCommand(step: IStepCommand) {
+    if ( step.command && typeof step.command == 'string' ) {
+        return true;
+    }
+    return false;
 }
 
-export function validateFunction(functionName: string, args?: StepArguments) {
-    if ( typeof taskFunctions[functionName] !== 'function' ) {       
-        logError(`No se encontro la funcion ${functionName}`);
+export function validateFunction(step: IStepFunction) {
+    if ( typeof taskFunctions[step.function] !== 'function' ) {       
+        logError(`No se encontro la funcion ${step.function}`);
         return false;
     }
-    if ( typeof args !== 'undefined' ) {        
-        if ( typeof args !== 'object'  ) {
-            logError(`La funcion ${functionName} recibio un argumento de tipo ${typeof args} y solo soporta object`);
+    if ( typeof step.arguments !== 'undefined' ) {        
+        if ( typeof step.arguments !== 'object'  ) {
+            logError(`La funcion ${step.function} recibio un argumento de tipo ${typeof step.arguments} y solo soporta object`);
             return false;    
         }
     }
@@ -177,11 +180,12 @@ export function getBranchName(): string {
     }
     return '';
 }
-export async function executeFunction(functionName: string, args?: StepArguments) {
+export async function executeFunction(step: IStepFunction) {
     let returnValue = false;
+    const functionName = step.function;
     if ( typeof taskFunctions[functionName] === 'function' ) {       
-        if ( args && typeof args === 'object' ) {
-            let mergedArgs: StepArguments = context.mergeArgs(args);
+        if ( step.arguments && typeof step.arguments === 'object' ) {
+            let mergedArgs: StepArguments = context.mergeArgs(step.arguments);
             if ( !Array.isArray(mergedArgs) ) {
                 const paramNames = getParams(taskFunctions[functionName]);
                 mergedArgs = createArray(paramNames, mergedArgs );

@@ -7,7 +7,7 @@ const templateEngine = templateGenerator("dictionary", "md");
 import {
   sortByLabel,
   DICTIONARY_FOLDER,
-  DOCS_FOLDER,
+  TEMPLATES_FOLDER,
 } from "./util.js";
 
 async function getMetadata(objetos: string[]): Promise<CustomObject[]> {
@@ -132,7 +132,7 @@ async function executeObjects(items: string[], filename: string, folder: string)
   templateEngine.render(objectContext, {
     helpers: { isManaged, isMetadataFormula, attributesFormula }
   });
-  templateEngine.save(filename, DOCS_FOLDER + "/" + folder);
+  templateEngine.save(filename, TEMPLATES_FOLDER + "/" + folder);
 }
 
 
