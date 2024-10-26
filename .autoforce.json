@@ -1,3 +1,6 @@
 {
-  "projectNumber": 1
+  "model": "modelA",
+  "gitServices": "github",
+  "projectServices": "github",
+  "projectId": "3"
 }

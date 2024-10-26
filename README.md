@@ -1,11 +1,12 @@
 # Autoforce
 
-El proyecto esta en todavia beta, esta recien migrado a Typescript y a ser un modulo instalable.
+El proyecto esta en Beta todavia, recien fue migrado a Typescript y paso de ser unos scripts aislados a un modulo que se puede instalar y ejecutar directamente tipo CLI.
 
 
 ## Objetivo
 
-La idea de la herramienta era facilitar y automatizar las tareas comunes que realizamos los desarrolladores. A medida que pasa el tiempo tenemos cada vez mas herramientas diarias y especificas, pero las tareas en si son las misma, queremos arrancar a desarrollar algo nuevo (start), terminar el desarrollo(finish), dejarlo a un costado (stop), o bien cancelarlo (cancel).
+La motivacion de crear la herramienta fue facilitar y automatizar las tareas comunes que realizamos los desarrolladores, especialmente los que utilizacion Salesforce. 
+A medida que pasa el tiempo tenemos cada vez mas herramientas diarias y especificas, pero las tareas en si son las mismas, queremos arrancar a desarrollar algo nuevo (start), terminar el desarrollo(finish), o bien dejarlo a un costado (stop), y posiblemente cancelar por completo alguno (cancel).
 
 En este repo las tareas buscan automatizar o integrar el siguiente tipo gestiones:
 
@@ -15,6 +16,7 @@ En este repo las tareas buscan automatizar o integrar el siguiente tipo gestione
 - Documentacion (Github pages o GitLab pages. Version mejorada con docusaurus)
 - Calidad de codigo (PMD)
 - Uso de IA ( OpenAI, )
+
 
 
 ## Instalación

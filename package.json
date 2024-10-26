@@ -3,6 +3,7 @@
   "homepage": "https://sebastianclaros.github.io/autoforce",
   "private": false,
   "version": "0.1.4",
+  "keywords": ["Salesforce", "Automation", "Git"],
   "description": "Developer Automation tool for Github / Gitlab and Salesforce projects.",
   "repository": {
     "type": "git",

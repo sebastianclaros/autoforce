@@ -1,18 +1,52 @@
 import fs from "fs";
 import { fileURLToPath } from 'url';
+import prompts from "prompts";
+import { GitProjects, GitServices } from "./context.js";
+import { logWarning } from "./color.js";
 export const TEMPLATES_FOLDER = searchInFolderHierarchy('templates', fileURLToPath(import.meta.url));
 export const DICTIONARY_FOLDER = TEMPLATES_FOLDER + "/diccionarios";
 export const WORKING_FOLDER = process.env.INIT_CWD || ".";
 export const CONFIG_FILE = process.cwd() + '/.autoforce.json';
 
 export async function createConfigurationFile() {
-    console.log('Preguntar por GitHub o GitLab');
-    console.log('Chequear las variables de entorno');
-    console.log('Tema proyecto guardar la referencia');
-    console.log('Genera documentacion');
-    console.log('Direccion de las carpetas');
+    const automationModel = await prompts([{
+      type: "select",
+      name: "model",
+      message: "Elija un modelo de automatizacion",
+      choices: [ { title: 'Orgs con Procesos de Negocio usando scratchs', value: 'modelA' }]
+      }]);
 
-    const config = { projectNumber: 1}
+    // Preguntar por GitHub o GitLab
+    const gitServices = await prompts([{
+      type: "select",
+      name: "git",
+      message: "Elija un servicio de Git",
+      choices: [ { title: 'Github', value: GitServices.GitHub }, { title: 'Gitlab', value:  GitServices.GitLab}]
+      }]);
+
+      //  Chequear las variables de entorno 
+      if ( gitServices.git === GitServices.GitHub && !process.env.GITHUB_TOKEN) {
+        logWarning('Debe configurar una variable de entorno GITHUB_TOKEN');  
+      }              
+      if ( gitServices.git === GitServices.GitLab && !process.env.GITLAB_TOKEN) {
+        logWarning('Debe configurar una variable de entorno GITLAB_TOKEN');  
+      }
+
+      const projectServices = await prompts([{
+        type: "select",
+        name: "project",
+        message: "Gestion de proyecto",
+        choices: [ { title: 'Github Projects', value: GitProjects.GitHub}, { title: 'GitLab Projects', value: GitProjects.GitLab} , { title: 'Jira', value: GitProjects.Jira}  , { title: 'None', value: GitProjects.None} ]
+      }]);  
+
+      const projectId = await prompts([{
+        type: "text",
+        name: "projectId",
+        message: "Id del proyecto"
+      }]);  
+
+//    console.log('Genera documentacion');
+    const config = { model: automationModel.model, gitServices: gitServices.git, projectServices: projectServices.project, projectId: projectId.projectId };
     
     try {
         fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );

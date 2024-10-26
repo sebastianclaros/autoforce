@@ -27,7 +27,11 @@ const FgGray = "\x1b[90m"
 // const BgGray = "\x1b[100m"
 
 export function logError( message: string, tabs = ''){
-    console.error(getColored(`[ERROR] ${tabs}${message}`, "red") );    
+    console.error(getColored(`[Error] ${tabs}${message}`, "red") );    
+}
+
+export function logWarning( message: string, tabs = ''){
+    console.error(getColored(`[Warning] ${tabs}${message}`, "yellow") );    
 }
 
 export function logStep( message: string, tabs = ''){

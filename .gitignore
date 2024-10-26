@@ -3,6 +3,9 @@ logs
 *.log
 npm-debug.log*
 
+# Autoforce
+.autoforce.json
+autoforce-v*.tgz
 
 # Dependency directories
 node_modules

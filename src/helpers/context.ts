@@ -1,6 +1,6 @@
 import { executeShell, getOrganizationObject, getCurrentOrganization, getBranchName, getTargetOrg } from "./taskFunctions.js"
 import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems, CONFIG_FILE, createConfigurationFile } from "./util.js";
-//import {GitHubApi} from "./github-graphql.js";
+import {GitHubApi} from "./github-graphql.js";
 import {GitLabApi} from "./gitlab-graphql.js";
 import prompts from "prompts";
 import matter from 'gray-matter';
@@ -8,13 +8,27 @@ import fs from "fs";
 import type { PromptChoices } from "../types/helpers/context.js";
 import type { IProcessHeader, Processes, AnyValue, IProcessInfo, ObjectRecord, IObjectRecord } from "../types/auto.js";
 import type { TaskArguments, TaskArgument, StepArguments } from "../types/helpers/tasks.js";
-import { logError } from "./color.js";
+import { logError, logWarning } from "./color.js";
+
+export enum GitServices {
+    GitHub = 'github',
+    GitLab = 'gitlab',
+    None = 'none'
+}
+
+export enum GitProjects {
+    GitHub = 'github',
+    GitLab = 'gitlab',
+    Jira = 'Jira',
+    None = 'none'
+}
 
 const filterProcesses: (fullPath: string) => boolean = (fullPath) =>  fullPath.endsWith(".md"); // && !fullPath.endsWith("intro.md") 
 const ISSUES_TYPES = [ { value: 'feature', title: 'feature' }, { value: 'bug', title: 'bug' }, { value: 'documentation', title: 'documentation' }, { value: 'automation', title: 'automation' }];
   
 class Context implements IObjectRecord {
     [s: string]: AnyValue | undefined;
+    gitServices: GitServices = GitServices.None; 
 
     isGitApi = false;
     gitApi: IGitApi | undefined;
@@ -54,26 +68,35 @@ class Context implements IObjectRecord {
     repositoryOwner: string | undefined;
     repositoryRepo: string | undefined;
     // Project Reference    
-    projectNumber: number | undefined;
+    projectId: string | undefined;
     
     loadGitApi() {
-        if ( !this.repositoryOwner ||  !this.repositoryRepo || !this.repositoryUrl) {
-            throw new Error("Falta agregue repository en el package.json para obtener el Owner or Repo");
+        if ( !this.gitServices && this.repositoryUrl) {
+            if ( this.repositoryUrl.indexOf('github') > 0 ) {
+                this.gitServices = GitServices.GitHub;            
+            } else if ( this.repositoryUrl.indexOf('gitlab') > 0  ) {
+                this.gitServices = GitServices.GitLab;
+            }
         }
 
-        //const isGithub = this.repositoryUrl.indexOf('github') > 0 ;
-        const isGitlab = this.repositoryUrl.indexOf('gitlab') > 0 ;
+        if ( this.gitServices == GitServices.GitHub && process.env.GITHUB_TOKEN ) {
+            if ( this.repositoryOwner &&  this.repositoryRepo && this.projectId && Number.isInteger(this.projectId) ) {
+                const token = process.env.GITHUB_TOKEN ;            
+                this.gitApi = new GitHubApi(token, this.repositoryOwner, this.repositoryRepo, Number.parseInt(this.projectId));
+                this.isGitApi = true;
+            } else {
+                logWarning(`No se pudo inicializar el conector a GitHub, Verifique repositoryOwner: ${this.repositoryOwner} o  repositoryRepo: ${this.repositoryRepo} o projectId: ${this.projectId}`);
+            }
+        }
 
-        //if ( isGithub && process.env.GITHUB_TOKEN ) {
-        //    const token = process.env.GITHUB_TOKEN ;            
-        //    this.gitApi = new GitHubApi(token, this.repositoryOwner, this.repositoryRepo, this.projectNumber);
-        //    this.isGitApi = true;
-        //}
-
-        if ( isGitlab && process.env.GITLAB_TOKEN ) {
-            const token = process.env.GITLAB_TOKEN ;
-            this.gitApi = new GitLabApi(token, this.repositoryOwner, this.repositoryRepo, this.projectNumber);
-            this.isGitApi = true;
+        if ( this.gitServices == GitServices.GitLab && process.env.GITLAB_TOKEN ) {
+            if ( this.repositoryOwner &&  this.repositoryRepo && this.projectId && Number.isInteger(this.projectId) ) {
+                const token = process.env.GITLAB_TOKEN ;
+                this.gitApi = new GitLabApi(token, this.repositoryOwner, this.repositoryRepo, Number.parseInt(this.projectId));
+                this.isGitApi = true;
+            } else {
+                logWarning(`No se pudo inicializar el conector a GitLab, Verifique repositoryOwner: ${this.repositoryOwner} o  repositoryRepo: ${this.repositoryRepo} o projectId: ${this.projectId}`);
+            }
         }
     }
 
@@ -111,7 +134,9 @@ class Context implements IObjectRecord {
 
     loadConfig() {
         if ( !fs.existsSync(CONFIG_FILE) ) {
-            logError('Aun no ha configurado autoforce, lo puede hacer mas tarde manualmente creando .autoforce.json en el root del proyecto o asisitido corriendo yarn init autoforce. O bien puede hacerlo ahora mismo :) ' );
+            logWarning('Bienvenido! Antes de usar la herramienta, tenemos que configurarla.');
+            logWarning('Lo puedes hacer mas tarde manualmente leyendo la documentacion y creando .autoforce.json en el root del proyecto'); 
+            logWarning('O bien ahora con el asistente, el mismo lo puedes llamar todas las veces que necesites corriendo npx autoforce config!' );
             createConfigurationFile();
             return; 
         }
