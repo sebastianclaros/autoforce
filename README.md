@@ -18,6 +18,42 @@ En este repo las tareas buscan automatizar o integrar el siguiente tipo gestione
 - Uso de IA ( OpenAI, )
 
 
+## Roadmap Status
+
+1. Modelos
+    - [Model A] "Procesos de Negocio en Clientes de Salesforce": 70%
+        Salesforce: Scratchs con Tracking y deploys usando sf cli 
+        Documentacion: Markdowns de Procesos con Github pages
+        Gestion de Proyecto: Github Project
+        Source Control: Github
+        Branching Strategy: Github workflow
+
+    - [Model B] "Desarrollo de Producto": 0%
+
+2. Github Services
+    - Github: Listo
+    - Gitlab: 20%
+    - Bitbucket: 0%
+
+3. Project Services
+    - Github: Listo
+    - Gitlab: 0%
+    - Jira: 0%
+
+4. Documentation Services
+    - Object: 90%
+    - Classes: 80%
+    - LWC: 10%
+
+5. IA
+    - Code creation: 0%
+    - Test classes: 0%
+    - Commit Messages: 0%
+    - Code Reviewer: 0%
+    - Documentation: 0%
+
+
+
 
 ## Instalación
 
