@@ -2,8 +2,12 @@
   "name": "autoforce",
   "homepage": "https://sebastianclaros.github.io/autoforce",
   "private": false,
-  "version": "0.1.4",
-  "keywords": ["Salesforce", "Automation", "Git"],
+  "version": "0.1.5",
+  "keywords": [
+    "Salesforce",
+    "Automation",
+    "Git"
+  ],
   "description": "Developer Automation tool for Github / Gitlab and Salesforce projects.",
   "repository": {
     "type": "git",
@@ -25,11 +29,12 @@
     "build": "tsc --project tsconfig.build.json",
     "prettier": "prettier --write \"**/*.{css,html,js,json,ts,md,xml,yaml,yml}\"",
     "test:build": "yarn build && npm publish --dry-run && node ./bin/index.js",
-    "test": "jest --config jest.config.js"
+    "test": "ts-jest --config jest.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
     "@types/jest": "29.4.0",
+    "@types/node": "^22.8.1",
     "@typescript-eslint/eslint-plugin": "5.54.0",
     "@typescript-eslint/parser": "5.52.0",
     "eslint": "^9.9.1",
