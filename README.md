@@ -30,6 +30,8 @@ En este repo las tareas buscan automatizar o integrar el siguiente tipo gestione
 
     - [Model B] "Desarrollo de Producto": 0%
 
+    - [Custom] "Modelo configurado fuera de la herramienta" 
+
 2. Github Services
     - Github: Listo
     - Gitlab: 20%
@@ -89,6 +91,11 @@ Si no se ingresa ningun comando asume que es task
 Y si no se ingresan parametros, tiene un modo asistido que los va a ir preguntando. Por ejemplo para el comando new, dara una lista de opciones de acuerdo a los templates.
 
 
+Hay un proyecto de test para analizar y probar la herramienta. 
+
+https://github.com/sebastianclaros/autoforce-test
+
+La guia del readme sirve de ejemplo.
 
 
 ## Testear una version

@@ -8,9 +8,9 @@ import { ICriteria, IStep, IStepCommand, IStepFunction, IStepTask, ITask, Step }
 import { AnyValue, CommandOptions, ObjectRecord } from "../types/auto.js";
 import { fileURLToPath } from 'url';
 const COMMAND_FOLDER = searchInFolderHierarchy('commands', fileURLToPath(import.meta.url));
-export const TASKS_FOLDER =  `${COMMAND_FOLDER}/tasks`;
-export const SUBTASKS_FOLDER = `${COMMAND_FOLDER}/subtasks`;
-export const NEW_FOLDER = `${COMMAND_FOLDER}/new`;
+export const TASKS_FOLDER =  `${COMMAND_FOLDER}/${context.model}/tasks`;
+export const SUBTASKS_FOLDER = `${COMMAND_FOLDER}/${context.model}/subtasks`;
+export const NEW_FOLDER = `${COMMAND_FOLDER}/${context.model}/new`;
 
 
 export function getTaskFolder(command: string) {

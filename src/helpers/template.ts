@@ -1,10 +1,10 @@
 import fs from "fs";
 import Handlebars from "handlebars";
 import { merge } from "./merge.js";
-import { getFiles } from "./util.js";
+import { fileURLToPath } from 'url';
+import { getFiles, searchInFolderHierarchy } from "./util.js";
 
-const TEMPLATE_ROOT_FOLDER = process.cwd() + "/templates";
-
+const TEMPLATE_ROOT_FOLDER = searchInFolderHierarchy('templates', fileURLToPath(import.meta.url));
 
 function isObjectEmpty(objectName: object) {
   return (

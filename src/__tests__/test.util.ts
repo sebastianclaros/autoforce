@@ -1,7 +1,9 @@
-import {  } from "../helpers/util";
+import { camelToText } from "../helpers/util";
 
 describe("util helper", () => {
-    test("", () => {
-
+    test("camelToText", () => {
+        const coloredText = camelToText('holaMundoFeliz');
+        expect(coloredText).toBe('hola Mundo Feliz');
+    
     });
 });

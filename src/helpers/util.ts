@@ -1,61 +1,139 @@
 import fs from "fs";
 import { fileURLToPath } from 'url';
-import prompts from "prompts";
+import prompts, { Choice } from "prompts";
 import { GitProjects, GitServices } from "./context.js";
 import { logWarning } from "./color.js";
+const COMMAND_FOLDER = searchInFolderHierarchy('commands', fileURLToPath(import.meta.url));
 export const TEMPLATES_FOLDER = searchInFolderHierarchy('templates', fileURLToPath(import.meta.url));
 export const DICTIONARY_FOLDER = TEMPLATES_FOLDER + "/diccionarios";
 export const WORKING_FOLDER = process.env.INIT_CWD || ".";
 export const CONFIG_FILE = process.cwd() + '/.autoforce.json';
+export const filterJson = (fullPath: string): boolean => fullPath.endsWith(".json");
+export const filterDirectory = (fullPath: string): boolean => fs.lstatSync(fullPath).isDirectory();
+export const filterFiles = (fullPath: string): boolean => !fs.lstatSync(fullPath).isDirectory();
 
+export const camelToText = (s: string) => s.replace(/[A-Z]/g, x => ' ' + x);
+export const kebabToText = (s: string) => s.replace(/-./g, x=> ' ' + x[1].toUpperCase())
+export const snakeToText = (s: string) => s.replace(/_./g, x=> ' ' + x[1].toUpperCase())
+
+export function valuesToChoices( list: string[], valueToTitle=(value:string)=>value ) {
+  return list.map( value => { return { value, title: valueToTitle(value) } } ) ;    
+} 
+export function titlesToChoices( list: string[], titleToValue=(title:string)=>title ) {
+  return list.map( title => { return { title,  value: titleToValue(title) } } ) ;    
+} 
+
+
+export function getDataFromPackage() {
+  const data :Record<string,string> = {};
+  try {
+    const filename =  process.cwd() +  "/package.json";
+    const content = fs.readFileSync(filename, "utf8");
+    const packageJson = JSON.parse(content);
+    if ( packageJson.repository ) {
+        if ( packageJson.repository.url ) {
+          data.repositoryUrl = packageJson.repository.url;
+          data.repositoryType = packageJson.repository.type;
+            // Ver de sacar repo y owner
+          if ( data.repositoryUrl  ) {
+            if ( data.repositoryUrl.includes("github.com") ){
+              const repositoryArray =  data.repositoryUrl.split('github.com/');
+              [data.repositoryOwner, data.repositoryRepo] = repositoryArray[1].split('/');
+            }
+            if ( data.repositoryUrl.includes("gitlab.com") ){
+              const repositoryArray =  data.repositoryUrl.split('gitlab.com/');
+              [data.repositoryOwner, data.repositoryRepo] = repositoryArray[1].split('/');
+            }            
+          } 
+        } else if ( typeof packageJson.repository === 'string' ) {
+          data.repositoryUrl = packageJson.repository as string;
+            const repositoryArray =  data.repositoryUrl.split(':');
+            data.repositoryType = repositoryArray[0];
+            [data.repositoryOwner, data.repositoryRepo] = repositoryArray[1].split('/');
+        }
+        if ( data.repositoryRepo && data.repositoryRepo.endsWith('.git') ) {
+          data.repositoryRepo = data.repositoryRepo.replace('.git', '');
+        }
+    } 
+  } catch (error) {
+      console.log(error);
+      throw new Error(`Verifique que exista y sea valido el package.json`  );
+  }  
+
+
+  return data;
+
+}
 export async function createConfigurationFile() {
+  // Todo: Chequear el repoOwner y repo
+  const data = getDataFromPackage();
+  if ( !data.repositoryOwner || !data.repositoryRepo ) {
+    throw new Error('No se encontro repository en el package.json ! Por favor agreguelo y vuelva a intentar');  
+  }
+  //const initialServices = data.repositoryUrl.includes("github.com") ? GitServices.GitHub: GitServices.GitLab;
+
+  // Preguntar por GitHub o GitLab
+  const gitServices = await prompts([{
+    type: "select",
+    name: "git",
+    message: "Elija un servicio de Git",
+    choices: [ { title: 'Github', value: GitServices.GitHub }, { title: 'Gitlab', value:  GitServices.GitLab}]
+    }]);
+
+    //  Chequear las variables de entorno 
+    if ( gitServices.git === GitServices.GitHub && !process.env.GITHUB_TOKEN) {
+      logWarning('A fin de que la herramienta funcione debe configurar una variable de entorno GITHUB_TOKEN');  
+    }
+    if ( gitServices.git === GitServices.GitLab && !process.env.GITLAB_TOKEN) {
+      logWarning('A fin de que la herramienta funcione debe configurar una variable de entorno GITLAB_TOKEN');  
+    }
+    const models: Choice[] = valuesToChoices(getFiles(COMMAND_FOLDER, filterDirectory ));
     const automationModel = await prompts([{
       type: "select",
       name: "model",
       message: "Elija un modelo de automatizacion",
-      choices: [ { title: 'Orgs con Procesos de Negocio usando scratchs', value: 'modelA' }]
+      choices: models.concat([{ title: 'Personalizado', value: 'custom', description: 'En este caso los comandos son configurados fuera de la herramienta y los lee de la carpeta commands en el root del repo' } ]) 
       }]);
-
-    // Preguntar por GitHub o GitLab
-    const gitServices = await prompts([{
-      type: "select",
-      name: "git",
-      message: "Elija un servicio de Git",
-      choices: [ { title: 'Github', value: GitServices.GitHub }, { title: 'Gitlab', value:  GitServices.GitLab}]
-      }]);
-
-      //  Chequear las variables de entorno 
-      if ( gitServices.git === GitServices.GitHub && !process.env.GITHUB_TOKEN) {
-        logWarning('Debe configurar una variable de entorno GITHUB_TOKEN');  
-      }              
-      if ( gitServices.git === GitServices.GitLab && !process.env.GITLAB_TOKEN) {
-        logWarning('Debe configurar una variable de entorno GITLAB_TOKEN');  
-      }
-
-      const projectServices = await prompts([{
+    // Si es custom pregunta si quiere tomar de base alguno existente
+    if ( automationModel.model === 'custom' ) {
+      const baseModel = await prompts([{
         type: "select",
-        name: "project",
-        message: "Gestion de proyecto",
-        choices: [ { title: 'Github Projects', value: GitProjects.GitHub}, { title: 'GitLab Projects', value: GitProjects.GitLab} , { title: 'Jira', value: GitProjects.Jira}  , { title: 'None', value: GitProjects.None} ]
-      }]);  
+        name: "model",
+        message: "Quiere tomar algun modelo existente de base ? Este se copiara a la carpeta ",
+        choices: models.concat( [{ title: 'No quiero usar ningun modelo', value: 'none'}])
+        }]);  
+      if ( baseModel.model !== 'none' ) {
+        console.log('copy archivos..');
+      }
+    }
+    // Gestion del Proyecto
+    const projectServices = await prompts([{
+      type: "select",
+      name: "project",
+      message: "Gestion de proyecto",
+      choices: [ { title: 'Github Projects', value: GitProjects.GitHub}, { title: 'GitLab Projects', value: GitProjects.GitLab} , { title: 'Jira', value: GitProjects.Jira}  , { title: 'None', value: GitProjects.None} ]
+    }]);
 
-      const projectId = await prompts([{
-        type: "text",
-        name: "projectId",
-        message: "Id del proyecto"
-      }]);  
+    if ( projectServices.project === GitProjects.GitHub || projectServices.project === GitProjects.GitLab) {
+      logInfo(`Por omision ser utilizan proyectos dentro de ${data.repositoryOwner} y ${data.repositoryRepo} `);  
+    }
+    const projectId = await prompts([{
+      type: "text",
+      name: "projectId",
+      message: "Id del proyecto"
+    }]);  
 
 //    console.log('Genera documentacion');
-    const config = { model: automationModel.model, gitServices: gitServices.git, projectServices: projectServices.project, projectId: projectId.projectId };
-    
-    try {
-        fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
-    } catch {
-      throw new Error(`No se pudo guardar la configuracion en ${CONFIG_FILE}`  );
-    }
-
-    return true;
+  const config = { model: automationModel.model, gitServices: gitServices.git, projectServices: projectServices.project, projectId: projectId.projectId };
+  
+  try {
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
+  } catch {
+    throw new Error(`No se pudo guardar la configuracion en ${CONFIG_FILE}`  );
   }
+
+  return true;
+}
 
 export function sortByName(objA: {Name: string}, objB: {Name: string}) {
   return objA.Name > objB.Name ? 1 : objA.Name < objB.Name ? -1 : 0;
@@ -106,9 +184,6 @@ export function splitFilename(fullname: string, defaultFolder: string = ''): { f
   return { filename, folder };
 }
 
-export const filterJson = (fullPath: string): boolean => fullPath.endsWith(".json");
-export const filterDirectory = (fullPath: string): boolean => fs.lstatSync(fullPath).isDirectory();
-export const filterFiles = (fullPath: string): boolean => !fs.lstatSync(fullPath).isDirectory();
 
 /**
  * Agrega los elementos de newArray a baseArray, si no existen previamente en baseArray.
@@ -164,5 +239,9 @@ export function convertKeyToName( key: string ): string {
       .split(' ')
       .map( (word: string) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+}
+
+function logInfo(arg0: string) {
+  throw new Error("Function not implemented.");
 }
 

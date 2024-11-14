@@ -1,5 +1,5 @@
 import { executeShell, getOrganizationObject, getCurrentOrganization, getBranchName, getTargetOrg } from "./taskFunctions.js"
-import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems, CONFIG_FILE, createConfigurationFile } from "./util.js";
+import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems, CONFIG_FILE, createConfigurationFile, getDataFromPackage } from "./util.js";
 import {GitHubApi} from "./github-graphql.js";
 import {GitLabApi} from "./gitlab-graphql.js";
 import prompts from "prompts";
@@ -28,6 +28,7 @@ const ISSUES_TYPES = [ { value: 'feature', title: 'feature' }, { value: 'bug', t
   
 class Context implements IObjectRecord {
     [s: string]: AnyValue | undefined;
+    model: string = 'modelA'; // Default Model
     gitServices: GitServices = GitServices.None; 
 
     isGitApi = false;
@@ -51,7 +52,6 @@ class Context implements IObjectRecord {
     permissionSet: string | undefined;
     issueTitle: string | undefined;
     isVerbose = false;
-    projectPath = process.cwd();
     _scratch: OrganizationInfo | undefined;
     _branchScratch: OrganizationInfo | undefined;
     existNewBranch = false; 
@@ -80,9 +80,10 @@ class Context implements IObjectRecord {
         }
 
         if ( this.gitServices == GitServices.GitHub && process.env.GITHUB_TOKEN ) {
-            if ( this.repositoryOwner &&  this.repositoryRepo && this.projectId && Number.isInteger(this.projectId) ) {
-                const token = process.env.GITHUB_TOKEN ;            
-                this.gitApi = new GitHubApi(token, this.repositoryOwner, this.repositoryRepo, Number.parseInt(this.projectId));
+            if ( this.repositoryOwner &&  this.repositoryRepo ) {
+                const token = process.env.GITHUB_TOKEN ;
+                const projectId = this.projectId && Number.isInteger(this.projectId) ? Number.parseInt(this.projectId): undefined;
+                this.gitApi = new GitHubApi(token, this.repositoryOwner, this.repositoryRepo, projectId);
                 this.isGitApi = true;
             } else {
                 logWarning(`No se pudo inicializar el conector a GitHub, Verifique repositoryOwner: ${this.repositoryOwner} o  repositoryRepo: ${this.repositoryRepo} o projectId: ${this.projectId}`);
@@ -90,9 +91,10 @@ class Context implements IObjectRecord {
         }
 
         if ( this.gitServices == GitServices.GitLab && process.env.GITLAB_TOKEN ) {
-            if ( this.repositoryOwner &&  this.repositoryRepo && this.projectId && Number.isInteger(this.projectId) ) {
+            if ( this.repositoryOwner &&  this.repositoryRepo ) {
                 const token = process.env.GITLAB_TOKEN ;
-                this.gitApi = new GitLabApi(token, this.repositoryOwner, this.repositoryRepo, Number.parseInt(this.projectId));
+                const projectId = this.projectId && Number.isInteger(this.projectId) ? Number.parseInt(this.projectId): undefined;
+                this.gitApi = new GitLabApi(token, this.repositoryOwner, this.repositoryRepo, projectId);
                 this.isGitApi = true;
             } else {
                 logWarning(`No se pudo inicializar el conector a GitLab, Verifique repositoryOwner: ${this.repositoryOwner} o  repositoryRepo: ${this.repositoryRepo} o projectId: ${this.projectId}`);
@@ -101,35 +103,10 @@ class Context implements IObjectRecord {
     }
 
     loadPackage() {
-        try {
-            const filename =  this.projectPath +  "/package.json";
-            const content = fs.readFileSync(filename, "utf8");
-            const packageJson = JSON.parse(content);
-            
-            if ( packageJson.repository ) {
-                if ( packageJson.repository.url ) {
-                    this.repositoryUrl = packageJson.repository.url;
-                    this.repositoryType = packageJson.repository.type;
-                    // Ver de sacar repo y owner
-                    if ( this.repositoryUrl && this.repositoryUrl.includes("github.com") ) {
-                        const repositoryArray =  this.repositoryUrl.split('github.com/');
-                        [this.repositoryOwner, this.repositoryRepo] = repositoryArray[1].split('/');
-                    }
-                } else if ( typeof packageJson.repository === 'string' ) {
-                    this.repositoryUrl = packageJson.repository as string;
-                    const repositoryArray =  this.repositoryUrl.split(':');
-                    this.repositoryType = repositoryArray[0];
-                    [this.repositoryOwner, this.repositoryRepo] = repositoryArray[1].split('/');
-                }
-                if ( this.repositoryRepo && this.repositoryRepo.endsWith('.git') ) {
-                    this.repositoryRepo = this.repositoryRepo.replace('.git', '');
-                }
-            } 
-
-        } catch (error) {
-            console.log(error);
-            throw new Error(`Verifique que exista y sea valido el package.json`  );
-        }  
+        const data = getDataFromPackage();
+        this.repositoryUrl = data.repositoryUrl;
+        this.repositoryOwner = data.repositoryOwner;
+        this.repositoryRepo = data.repositoryRepo;        
     }
 
     loadConfig() {
