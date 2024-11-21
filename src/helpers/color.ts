@@ -34,6 +34,10 @@ export function logWarning( message: string, tabs = ''){
     console.error(getColored(`[Warning] ${tabs}${message}`, "yellow") );    
 }
 
+export function logInfo( message: string, tabs = ''){
+    console.info(getColored(`${tabs}${message}`, "green") );    
+} 
+
 export function logStep( message: string, tabs = ''){
     console.info(getColored(`${tabs}${message}`, "green") );    
 } 

@@ -1,6 +1,7 @@
 import { executeShell, getOrganizationObject, getCurrentOrganization, getBranchName, getTargetOrg } from "./taskFunctions.js"
 import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems, CONFIG_FILE, createConfigurationFile, getDataFromPackage } from "./util.js";
 import {GitHubApi} from "./github-graphql.js";
+import {GitHubProjectApi} from "./github-project-graphql.js";
 import {GitLabApi} from "./gitlab-graphql.js";
 import prompts from "prompts";
 import matter from 'gray-matter';
@@ -16,7 +17,7 @@ export enum GitServices {
     None = 'none'
 }
 
-export enum GitProjects {
+export enum ProjectServices {
     GitHub = 'github',
     GitLab = 'gitlab',
     Jira = 'Jira',
@@ -30,21 +31,24 @@ class Context implements IObjectRecord {
     [s: string]: AnyValue | undefined;
     model: string = 'modelA'; // Default Model
     gitServices: GitServices = GitServices.None; 
-
     isGitApi = false;
     gitApi: IGitApi | undefined;
+
+    projectServices: ProjectServices = ProjectServices.None; 
+    isProjectApi = false;
     projectApi: IProjectApi | undefined;
+
     sfInstalled = true; 
     sfToken = true;
 
     branchName: string | undefined;
-    issueNumber: number | undefined;
+    issueNumber: string | undefined;
     issueType: string | undefined;
 
     _process: string | undefined;
     _processesHeader: Record<string, IProcessHeader> | undefined;
 
-    _newIssueNumber: number | undefined;
+    _newIssueNumber: string | undefined;
     _newIssueType: string | undefined;
     newBranchName: string | undefined;
     
@@ -69,35 +73,70 @@ class Context implements IObjectRecord {
     repositoryRepo: string | undefined;
     // Project Reference    
     projectId: string | undefined;
+    backlogColumn = 'Todo';
+
+    loadProjectApi() {
+        if ( !this.isProjectApi ) {
+            if ( this.projectServices == ProjectServices.GitHub && process.env.GITHUB_TOKEN ) {
+                if ( this.repositoryOwner &&  this.repositoryRepo ) {
+                    const token = process.env.GITHUB_TOKEN ;
+                    const projectId = this.projectId && !Number.isNaN(this.projectId) ? Number.parseInt(this.projectId): undefined;
+                    if (!projectId) {
+                        throw Error('Para gestionar proyectos en Github se necesita el projectId. npx autoforce config');
+                    }
+                    this.gitApi = this.projectApi = new GitHubProjectApi(token, this.repositoryOwner, this.repositoryRepo, projectId);
+                    this.isProjectApi = true;
+
+                    if ( this,this.gitServices == GitServices.GitHub ) {
+                        this.isGitApi = true;                        
+                    }
+                } else {
+                    logWarning(`No se pudo inicializar el conector a GitHub, Verifique repositoryOwner: ${this.repositoryOwner} o  repositoryRepo: ${this.repositoryRepo} o projectId: ${this.projectId}`);
+                }
+            }
     
+            if ( this.projectServices == ProjectServices.GitLab && process.env.GITLAB_TOKEN ) {
+                if ( this.repositoryOwner &&  this.repositoryRepo ) {
+                    const token = process.env.GITLAB_TOKEN ;
+                    const projectId = this.projectId && Number.isInteger(this.projectId) ? Number.parseInt(this.projectId): undefined;
+                    this.gitApi = this.projectApi = new GitLabApi(token, this.repositoryOwner, this.repositoryRepo, projectId);
+                    this.isProjectApi = true;
+                } else {
+                    logWarning(`No se pudo inicializar el conector a GitLab, Verifique repositoryOwner: ${this.repositoryOwner} o  repositoryRepo: ${this.repositoryRepo} o projectId: ${this.projectId}`);
+                }
+            }
+        }
+
+    }
+
     loadGitApi() {
-        if ( !this.gitServices && this.repositoryUrl) {
-            if ( this.repositoryUrl.indexOf('github') > 0 ) {
-                this.gitServices = GitServices.GitHub;            
-            } else if ( this.repositoryUrl.indexOf('gitlab') > 0  ) {
-                this.gitServices = GitServices.GitLab;
+        if ( !this.isGitApi ) {
+            if ( !this.gitServices && this.repositoryUrl) {
+                if ( this.repositoryUrl.indexOf('github') > 0 ) {
+                    this.gitServices = GitServices.GitHub;            
+                } else if ( this.repositoryUrl.indexOf('gitlab') > 0  ) {
+                    this.gitServices = GitServices.GitLab;
+                }
             }
-        }
-
-        if ( this.gitServices == GitServices.GitHub && process.env.GITHUB_TOKEN ) {
-            if ( this.repositoryOwner &&  this.repositoryRepo ) {
-                const token = process.env.GITHUB_TOKEN ;
-                const projectId = this.projectId && Number.isInteger(this.projectId) ? Number.parseInt(this.projectId): undefined;
-                this.gitApi = new GitHubApi(token, this.repositoryOwner, this.repositoryRepo, projectId);
-                this.isGitApi = true;
-            } else {
-                logWarning(`No se pudo inicializar el conector a GitHub, Verifique repositoryOwner: ${this.repositoryOwner} o  repositoryRepo: ${this.repositoryRepo} o projectId: ${this.projectId}`);
+    
+            if ( this.gitServices == GitServices.GitHub && process.env.GITHUB_TOKEN ) {
+                if ( this.repositoryOwner &&  this.repositoryRepo ) {
+                    const token = process.env.GITHUB_TOKEN ;
+                    this.gitApi = new GitHubApi(token, this.repositoryOwner, this.repositoryRepo);
+                    this.isGitApi = true;
+                } else {
+                    logWarning(`No se pudo inicializar el conector a GitHub, Verifique repositoryOwner: ${this.repositoryOwner} o  repositoryRepo: ${this.repositoryRepo} o projectId: ${this.projectId}`);
+                }
             }
-        }
-
-        if ( this.gitServices == GitServices.GitLab && process.env.GITLAB_TOKEN ) {
-            if ( this.repositoryOwner &&  this.repositoryRepo ) {
-                const token = process.env.GITLAB_TOKEN ;
-                const projectId = this.projectId && Number.isInteger(this.projectId) ? Number.parseInt(this.projectId): undefined;
-                this.gitApi = new GitLabApi(token, this.repositoryOwner, this.repositoryRepo, projectId);
-                this.isGitApi = true;
-            } else {
-                logWarning(`No se pudo inicializar el conector a GitLab, Verifique repositoryOwner: ${this.repositoryOwner} o  repositoryRepo: ${this.repositoryRepo} o projectId: ${this.projectId}`);
+    
+            if ( this.gitServices == GitServices.GitLab && process.env.GITLAB_TOKEN ) {
+                if ( this.repositoryOwner &&  this.repositoryRepo ) {
+                    const token = process.env.GITLAB_TOKEN ;
+                    this.gitApi = new GitLabApi(token, this.repositoryOwner, this.repositoryRepo);
+                    this.isGitApi = true;
+                } else {
+                    logWarning(`No se pudo inicializar el conector a GitLab, Verifique repositoryOwner: ${this.repositoryOwner} o  repositoryRepo: ${this.repositoryRepo} o projectId: ${this.projectId}`);
+                }
             }
         }
     }
@@ -133,7 +172,9 @@ class Context implements IObjectRecord {
         // Busca variables de entorno    
         this.loadConfig();
         this.loadPackage();
+        this.loadProjectApi();
         this.loadGitApi();
+
         // 
         this.branchName = getBranchName();
 
@@ -262,13 +303,13 @@ class Context implements IObjectRecord {
         if ( branchSplit.length > 1 ) {
             this.issueType = branchSplit[0];
             if ( !Number.isNaN(Number(branchSplit[1])) ) {
-                this.issueNumber = parseInt( branchSplit[1] );
+                this.issueNumber =  branchSplit[1] ;
             } else {
 //                    [this.issueNumber, this.issueTitle] = branchSplit[1].split() // /^([^ -]+)[ -](.*)$/.exec( branchSplit[1]).slice(1);
             }
         }
     }
-    branchNameFromIssue (issueType: string, issueNumber: number, title?: string ) {
+    branchNameFromIssue (issueType: string, issueNumber: string, title?: string ) {
         let baseName =  issueType + '/' + issueNumber;
         if ( title ) {
             baseName += ' - ' + title.replaceAll(' ', '-');

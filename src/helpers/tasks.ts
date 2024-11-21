@@ -113,15 +113,19 @@ export async function runTask(task: ITask, taskContext: CommandOptions, tabs = '
     }
     await context.askForArguments(task.arguments);
   }
-  logStep( `[INICIO] ${task.name}`, tabs );
+  if ( task.verbose ) {
+    logStep( `[INICIO] ${task.name}`, tabs );
+  }
   for ( const step of task.steps ) {
     if ( isCriteriaMet(step.criteria) ) {
-      if ( ! await executeStep(step, tabs + '\t') ) {
+      if ( ! await executeStep(step, tabs + '\t', task.verbose) ) {
         return false;
       }
     }
   }
-  logStep(`[FIN] ${task.name}`, tabs);  
+  if ( task.verbose ) {
+    logStep(`[FIN] ${task.name}`, tabs);  
+  }
   return true;
 }
 
@@ -194,9 +198,9 @@ async function askForContinueOrRetry() {
 function getStepError(step: IStep, stepName?: string) {
   return step.errorMessage ? context.merge(step.errorMessage): stepName ? `Fallo el step ${stepName}` : '';
 }
-async function executeStep(step: Step, tabs: string) {
+async function executeStep(step: Step, tabs: string, verbose = false) {
   const stepName = step.name ? context.merge(step.name): undefined;
-  if ( stepName ) {
+  if ( verbose && stepName ) {
     logStep(`[INICIO] ${stepName}`, tabs);
   }
   
@@ -227,7 +231,7 @@ async function executeStep(step: Step, tabs: string) {
     }
   } while ( !success && retry);
 
-  if ( stepName ) {
+  if ( verbose &&  stepName ) {
     logStep(`[FIN] ${stepName}`, tabs );
   }
   if ( !success) {

@@ -1,6 +1,7 @@
 {
   "name": "view",
   "guards": ["isGitApi"],
+  "arguments": ["issueNumber"],
   "description": "Comando para ver en detalle el requerimiento",
   "steps": [
     {

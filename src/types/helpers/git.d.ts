@@ -1,5 +1,6 @@
 
 interface IIssueObject extends object{
+    id?: string;
     name?: string;
     branch?: string;
     title?: string;
@@ -12,13 +13,14 @@ interface IGitApi {
 //    getRepository: () => Promise<IGitRepository>;
     createPullRequest: (branchName: string, title: string, body: string) => Promise<boolean>;
 //    getCommit: (commitSha: string) => Promise<ICommit>;
-    assignBranchToIssue: (issueNumber: number, branchName: string, commitSha: string) => Promise<boolean>;
+    assignBranchToIssue: (issueNumber: string, branchName: string, commitSha: string) => Promise<boolean>;
 }
 
 interface IProjectApi {
-    moveIssue: (issueNumber: number, state: string) => Promise<boolean>;
-    getIssueObject(issueNumber: number): Promise<IIssueObject>;
-    assignIssueToMe: (issueNumber: number)=> Promise<boolean>;
+    moveIssue: (issueNumber: string, state: string) => Promise<boolean>;
+    getIssues(): Promise<IIssueObject[]>;
+    getIssueObject(issueNumber: string): Promise<IIssueObject>;
+    assignIssueToMe: (issueNumber: string)=> Promise<boolean>;
     createIssue: (title, state?, label?, milestone?, body?) => Promise<number>;
     // getColumnValueMap: ()
     // getIssueState: (issueNumber: number){

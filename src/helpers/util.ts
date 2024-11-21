@@ -1,8 +1,8 @@
 import fs from "fs";
 import { fileURLToPath } from 'url';
 import prompts, { Choice } from "prompts";
-import { GitProjects, GitServices } from "./context.js";
-import { logWarning } from "./color.js";
+import { ProjectServices, GitServices } from "./context.js";
+import { logInfo, logWarning } from "./color.js";
 const COMMAND_FOLDER = searchInFolderHierarchy('commands', fileURLToPath(import.meta.url));
 export const TEMPLATES_FOLDER = searchInFolderHierarchy('templates', fileURLToPath(import.meta.url));
 export const DICTIONARY_FOLDER = TEMPLATES_FOLDER + "/diccionarios";
@@ -67,15 +67,18 @@ export function getDataFromPackage() {
 export async function createConfigurationFile() {
   // Todo: Chequear el repoOwner y repo
   const data = getDataFromPackage();
+  const optionals: Record<string,string> = {};
+  
   if ( !data.repositoryOwner || !data.repositoryRepo ) {
     throw new Error('No se encontro repository en el package.json ! Por favor agreguelo y vuelva a intentar');  
   }
-  //const initialServices = data.repositoryUrl.includes("github.com") ? GitServices.GitHub: GitServices.GitLab;
+  const initialServices = data.repositoryUrl.includes("github.com") ? 0: 1;
 
   // Preguntar por GitHub o GitLab
   const gitServices = await prompts([{
     type: "select",
     name: "git",
+    initial: initialServices,
     message: "Elija un servicio de Git",
     choices: [ { title: 'Github', value: GitServices.GitHub }, { title: 'Gitlab', value:  GitServices.GitLab}]
     }]);
@@ -110,11 +113,22 @@ export async function createConfigurationFile() {
     const projectServices = await prompts([{
       type: "select",
       name: "project",
+      initial: initialServices,
       message: "Gestion de proyecto",
-      choices: [ { title: 'Github Projects', value: GitProjects.GitHub}, { title: 'GitLab Projects', value: GitProjects.GitLab} , { title: 'Jira', value: GitProjects.Jira}  , { title: 'None', value: GitProjects.None} ]
+      choices: [ { title: 'Github Projects', value: ProjectServices.GitHub}, { title: 'GitLab Projects', value: ProjectServices.GitLab} , { title: 'Jira', value: ProjectServices.Jira}  , { title: 'None', value: ProjectServices.None} ]
     }]);
 
-    if ( projectServices.project === GitProjects.GitHub || projectServices.project === GitProjects.GitLab) {
+    
+    if ( projectServices.project === ProjectServices.GitHub || projectServices.project === ProjectServices.GitLab) {
+      
+      // Gestion del Proyecto
+      const backlogColumn = await prompts([{
+        type: "text",
+        name: "backlogColumn",
+        initial: 'Backlog',
+        message: "Nombre de la columna donde se crean nuevos issues"
+      }]);
+      optionals['backlogColumn'] = backlogColumn.backlogColumn;
       logInfo(`Por omision ser utilizan proyectos dentro de ${data.repositoryOwner} y ${data.repositoryRepo} `);  
     }
     const projectId = await prompts([{
@@ -124,7 +138,7 @@ export async function createConfigurationFile() {
     }]);  
 
 //    console.log('Genera documentacion');
-  const config = { model: automationModel.model, gitServices: gitServices.git, projectServices: projectServices.project, projectId: projectId.projectId };
+  const config = { model: automationModel.model, gitServices: gitServices.git, projectServices: projectServices.project, projectId: projectId.projectId, ...optionals };
   
   try {
       fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
@@ -239,9 +253,5 @@ export function convertKeyToName( key: string ): string {
       .split(' ')
       .map( (word: string) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-}
-
-function logInfo(arg0: string) {
-  throw new Error("Function not implemented.");
 }
 

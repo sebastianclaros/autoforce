@@ -3,7 +3,7 @@ import { AnyValue } from '../types/auto.js';
 
 const GITLAB_API = 'https://gitlab.com/api/graphql?remove_deprecated=true'
 
-export class GitLabApi implements IGitApi {
+export class GitLabApi implements IGitApi, IProjectApi {
     repoVar;
     projectNumber; 
     graphqlAuth;
@@ -14,6 +14,31 @@ export class GitLabApi implements IGitApi {
         this.projectNumber = projectNumber;
         this.graphqlAuth.setHeaders({  authorization: `Bearer ${token}` })
     }
+
+    async  getIssueObject(issueNumber: string) {
+      console.log(issueNumber);
+      return {};
+    }
+    async  getIssues() {
+      return [];
+    }
+   
+    async createIssue(title: string, state?: string, label?: string, milestone?: string, body?: string ) {
+      console.log(title, label, milestone, body);
+      return 1 ;  
+    }
+  
+    async  moveIssue(issueNumber: string, state: string): Promise<boolean> {
+      console.log(issueNumber, state);
+      return true ;  
+    }
+  
+
+    async assignIssueToMe(issueNumber: string): Promise<boolean> {
+      console.log(issueNumber);
+      return true ;  
+    }
+  
     async  getUser() {
         const query = `{
           viewer {
@@ -63,11 +88,11 @@ export class GitLabApi implements IGitApi {
       return true;
     }
 
-    async assignBranchToIssue(issueNumber: number, branchName: string, commitSha: string): Promise<boolean>  {
+    async assignBranchToIssue(issueNumber: string, branchName: string, commitSha: string): Promise<boolean>  {
       const query = `mutation($branchName: ID!, $issueNumber: Int!, $commitSha: String!) {
         
       }`;
-      await this.graphqlQuery( query, {branchName, issueNumber, commitSha});      
+      await this.graphqlQuery( query, {branchName, issueNumber: Number.parseInt(issueNumber), commitSha});      
       return true;
     }
 }

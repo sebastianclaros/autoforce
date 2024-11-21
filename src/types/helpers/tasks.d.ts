@@ -12,6 +12,7 @@
   type StepArguments = Record<string, string> | string[] ;
   export interface ITask {
     name: string;
+    verbose: boolean;
     guards: string[];
     arguments: TaskArguments;
     description: string;

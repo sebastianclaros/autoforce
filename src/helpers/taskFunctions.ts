@@ -310,9 +310,9 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         if ( context.projectApi === undefined ) {
             return false;
         }
-        const issueNumber = await context.projectApi.createIssue(title, 'Backlog', label );
+        const issueNumber = await context.projectApi.createIssue(title, context.backlogColumn, label );
         if ( issueNumber) {
-            console.log(`Se creao el issue ${issueNumber}`);
+            console.log(`Se creo el issue ${issueNumber}`);
             return true;
         }
         return false;
@@ -323,7 +323,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         return true;
     },
     
-    async validateIssue(issueNumber: number, states: string) {        
+    async validateIssue(issueNumber: string, states: string) {        
         if ( context.projectApi === undefined ) {
             return false;
         }
@@ -375,7 +375,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         return false;
     },
     
-    async moveIssue(issueNumber: number, state: string): Promise<boolean> {
+    async moveIssue(issueNumber: string, state: string): Promise<boolean> {
         if ( context.projectApi === undefined ) {
             return false;
         }
@@ -383,7 +383,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         return result;
     },
     
-    async assignBranchToIssue(issueNumber: number, newBranchName: string): Promise<boolean>  {
+    async assignBranchToIssue(issueNumber: string, newBranchName: string): Promise<boolean>  {
         if ( context.gitApi === undefined ) {
             return false;
         }
@@ -393,7 +393,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
     },    
 
     
-    async assignIssueToMe(issueNumber: number): Promise<boolean>  {
+    async assignIssueToMe(issueNumber: string): Promise<boolean>  {
         if ( !context.projectApi ){
             return false;
         }
@@ -402,10 +402,11 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         
     },    
 
-    async viewIssue(issueNumber: number): Promise<boolean>  {
+    async viewIssue(issueNumber: string): Promise<boolean>  {
         if ( !context.projectApi ){
             return false;
         }
+                
         const result = await context.projectApi.getIssueObject(issueNumber);
         // Branch    
         if ( result.branch  ) {
@@ -413,7 +414,6 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         } else {
             console.log( 'sin branch' );
         }
-    
         // Labels
         if ( result.labels ) {
             const labels = [];
@@ -432,7 +432,18 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         return true;
     },
 
-    async checkIssueType(issueNumber: number): Promise<boolean>  {
+    async listIssues(): Promise<boolean>  {
+        if ( !context.projectApi ){
+            return false;
+        }        
+        const result = await context.projectApi.getIssues();
+        for( const issue of result) {
+            console.log( issue.title);
+        }
+        return true;
+    },    
+
+    async checkIssueType(issueNumber: string): Promise<boolean>  {
         if ( !context.projectApi ){
             return false;
         }
