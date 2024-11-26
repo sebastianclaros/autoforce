@@ -24,7 +24,6 @@
     description?: string;    
     errorMessage?: string;
     onError: string;
-    skipOnError?: boolean;
     criteria?: ICriteria;
     type: string;
   }

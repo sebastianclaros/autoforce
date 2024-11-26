@@ -27,14 +27,15 @@
           "description": "Nuevas funcionalidades"
         }
       ]
-    }
+    },
+    "body": { "required": false }    
   },
   "description": "Comando para crear un requerimiento nuevo",
   "steps": [
     {
       "name": "Crear un issue nuevo",
       "function": "createIssue",
-      "arguments": ["${title}", "${label}"]
+      "arguments": ["${title}", "${label}", "${body}"]
     }
   ]
 }

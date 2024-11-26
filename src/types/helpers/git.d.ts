@@ -20,8 +20,8 @@ interface IProjectApi {
     moveIssue: (issueNumber: string, state: string) => Promise<boolean>;
     getIssues(): Promise<IIssueObject[]>;
     getIssueObject(issueNumber: string): Promise<IIssueObject>;
-    assignIssueToMe: (issueNumber: string)=> Promise<boolean>;
-    createIssue: (title, state?, label?, milestone?, body?) => Promise<number>;
+    assignIssueToMe: (issueNumber: string)=> Promise<boolean>;    
+    createIssue: (title, state?: string, label?: string, body?: string, milestone?: string) => Promise<number>;
     // getColumnValueMap: ()
     // getIssueState: (issueNumber: number){
     // getIssue: (issueNumber: number){

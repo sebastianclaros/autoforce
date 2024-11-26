@@ -5,12 +5,12 @@
       {
         "name": "Borra el paquete",
         "command": "rm autoforce*.tgz",
-        "skipOnError": true
+        "onError": "skip"
       },
       {
         "name": "Borra los archivos en Lib",
         "command": "rm -rf ./lib/",
-        "skipOnError": true
+        "onError": "skip"
       },
       {
         "name": "Compila el typescript",

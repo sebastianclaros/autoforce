@@ -29,7 +29,7 @@
       "function": "assignIssueToMe",
       "arguments": ["${newIssueNumber}"],
       "errorMessage": "No se pudo pudo asignar la branch (${newBranchName}) al issue. Por favor hagalo manualmente",
-      "skipOnError": true
+      "onError": "skip"
     },
     {
       "name": "Pone la branch en el issue",
@@ -39,7 +39,7 @@
         "issueNumber": "${newIssueNumber}"
       },
       "errorMessage": "No se pudo asignar la branch ${newBranchName} al issue ${newIssueNumber}. Hagalo manualmente",
-      "skipOnError": true
+      "onError": "skip"
     },
     {
       "name": "Asocia la branch con el remote",

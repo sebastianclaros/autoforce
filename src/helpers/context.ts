@@ -541,7 +541,7 @@ class Context implements IObjectRecord {
             return text; 
         }
 
-        const matches = text.matchAll(/\$0.1.9\{([^}]+)}/g);
+        const matches = text.matchAll(/\$\{([^}]+)}/g);
         // si no tiene para merge
         if( matches === null ) {
             return text; 

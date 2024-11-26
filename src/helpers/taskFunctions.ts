@@ -1,6 +1,6 @@
 import {execSync} from "child_process";
 import context from "./context.js";
-import { logError} from "./color.js";
+import { logError, logInfo} from "./color.js";
 import metadata from './metadata.js';
 import prompts from "prompts";
 import templateGenerator from "./template.js";
@@ -184,6 +184,8 @@ export async function executeFunction(step: IStepFunction) {
     let returnValue = false;
     const functionName = step.function;
     if ( typeof taskFunctions[functionName] === 'function' ) {       
+        
+        
         if ( step.arguments && typeof step.arguments === 'object' ) {
             let mergedArgs: StepArguments = context.mergeArgs(step.arguments);
             if ( !Array.isArray(mergedArgs) ) {
@@ -220,7 +222,10 @@ function getFilesChanged() {
 }
 
 export const taskFunctions: { [s: string]: AnyValue } = {   
-
+    skip() { 
+        logInfo('Error omitido por configuracion del step');
+        return true; 
+    },
     async docProcess() { 
         if ( !context.process ) {
             return false;
@@ -306,11 +311,11 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         console.log('Not implemented');
         return false;
     },
-    async createIssue(title: string, label: string): Promise<boolean> {
+    async createIssue(title: string, label: string, body?: string): Promise<boolean> {
         if ( context.projectApi === undefined ) {
             return false;
         }
-        const issueNumber = await context.projectApi.createIssue(title, context.backlogColumn, label );
+        const issueNumber = await context.projectApi.createIssue(title, context.backlogColumn, label, body );
         if ( issueNumber) {
             console.log(`Se creo el issue ${issueNumber}`);
             return true;

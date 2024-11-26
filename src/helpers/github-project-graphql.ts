@@ -37,7 +37,7 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
     return mapValues;
   }
 
-  async createIssue(title: string, state?: string, label?: string, milestone?: string, body?: string ) {
+  async createIssue(title: string, state?: string, label?: string, body?: string, milestone?: string ) {
     const user = await this.getUser();
     const repository = await this.getRepository(label);
     const repositoryId = repository.id;
