@@ -1,0 +1,18 @@
+[
+    { 
+        "title": "Continious Delivery con Scratch Orgs",
+        "value": "modelA",
+        "description": "Github workflow pensado en soluciones para Clientes finales"
+    },
+    { 
+        "title": "Second Generation Packages con Scratch Orgs",
+        "value": "modelB",
+        "description": "Gitflow workflow pensado para ISV"
+    },
+    { 
+        "title": "Paquetes de NPM",
+        "value": "modelC",
+        "description": "Para herramientas complementarias como autoforce"
+    }
+]
+

@@ -1,0 +1,29 @@
+{
+    "name": "pack",
+    "description": "Comando para crear el package localmente",
+    "steps": [
+      {
+        "name": "Borra el paquete",
+        "command": "rm autoforce*.tgz",
+        "skipOnError": true
+      },
+      {
+        "name": "Borra los archivos en Lib",
+        "command": "rm -rf ./lib/",
+        "skipOnError": true
+      },
+      {
+        "name": "Compila el typescript",
+        "command": "tsc --project tsconfig.build.json"
+      },
+      {
+        "name": "Arma el paquete",
+        "command": "yarn pack"
+      },
+      {
+        "name": "Renombra paquete",
+        "command": "mv autoforce*.tgz autoforce.tgz"
+      }
+    ]
+  }
+  

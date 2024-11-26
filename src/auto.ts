@@ -18,7 +18,7 @@ const taskCommand: Record<string, CommandTaskFunction> = {
 }
 
 async function  showVersion() {
-    console.log('AutoForce v0.1.4');
+    console.log('AutoForce v0.1.9');
     return true;
 }
 

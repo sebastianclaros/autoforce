@@ -1,0 +1,11 @@
+{
+  "name": "list",
+  "guards": ["isGitApi"],
+  "description": "Comando para ver en detalle el requerimiento",
+  "steps": [
+    {
+      "name": "Ver los issues del Backlog",
+      "function": "listIssues"
+    }
+  ]
+}

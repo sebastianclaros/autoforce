@@ -1,0 +1,60 @@
+{
+  "name": "checkout-branch",
+  "guards": ["isGitApi"],
+  "arguments": ["newBranchName"],
+  "description": "Comando para cambiar de branch y baja cualquier cambio que este en la remote branch o en main",
+  "steps": [
+    {
+      "name": "valida que no sea la branch actual",
+      "function": "validaNoseaBranchActual",
+      "arguments": ["${newBranchName}"],
+      "description": "Valida que no sea la branch actual",
+      "errorMessage": "Ya esta parado sobre la branch ${newBranchName}"
+    },
+    {
+      "name": "chequea si hay cambios sin commit",
+      "function": "checkCommitPending",
+      "description": "Chequea si hay algo sin commitear",
+      "errorMessage": "Tiene modificaciones pendientes:\n ${salida}",
+      "onError": "commitChanges"
+    },
+    {
+      "name": "baja cambios en remote y en main",
+      "command": "git",
+      "arguments": ["fetch"],
+      "description": "Baja de remote",
+      "errorMessage": "No se pudo actualizar la branch, intente manualmente con git fetch"
+    },
+    {
+      "criteria": { "field": "existNewBranch", "value": true },
+      "name": "cambia de branch",
+      "command": "git",
+      "arguments": ["checkout", "${newBranchName}"],
+      "description": "Cambia de branch",
+      "errorMessage": "No se pudo mover al branch ${newBranchName}. Hagalo manualmente ${command}"
+    },
+    {
+      "criteria": { "field": "existNewBranch", "value": true },
+      "name": "baja de la remote branch",
+      "command": "git",
+      "arguments": ["pull", "--set-upstream", "origin ${newBranchName}"],
+      "description": "Trae contenido de branch remota",
+      "errorMessage": "No se pudo traer de la remote branch ${newBranchName}. Hagalo manualmente ${command}"
+    },
+    {
+      "criteria": { "field": "existNewBranch", "value": true },
+      "name": "merge de main",
+      "command": "git",
+      "arguments": ["merge main"],
+      "description": "Trae cualquier cambio en main",
+      "errorMessage": "No se pudo actualizar la branch con main, intente manualmente con git merge main"
+    },
+    {
+      "criteria": { "field": "existNewBranch", "value": false },
+      "name": "crea de branch",
+      "function": "createBranch",
+      "description": "Crea la nueva branch ${newBranchName}",
+      "errorMessage": "No se pudo crear la branch ${newBranchName}. Hagalo manualmente ${command}"
+    }
+  ]
+}

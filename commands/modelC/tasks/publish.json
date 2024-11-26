@@ -1,0 +1,9 @@
+{
+  "name": "publish",
+  "guards": ["isGitApi"],
+  "description": "Comando para publicar un requerimiento al ambiente",
+  "steps": [
+    { "name": "Paquetiza", "subtask": "pack" },
+    { "name": "Publica", "command": "yarn publish" }
+  ]
+}

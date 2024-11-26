@@ -161,7 +161,7 @@ class Context implements IObjectRecord {
           const config: ObjectRecord = JSON.parse(content);
           for( const key in config ) {
             this.set(key, config[key] );
-          }
+        }
         } catch {
           throw new Error(`Verifique que el ${CONFIG_FILE} sea json valido`  );
         }
@@ -559,10 +559,11 @@ class Context implements IObjectRecord {
 }
 
 const context = new Context();
+context.loadConfig();
 let initialized = false;
 export function initializeContext() {
     try {
-        if ( !initialized ) {
+        if ( initialized === false) {
             context.init();
             initialized = true;
         }

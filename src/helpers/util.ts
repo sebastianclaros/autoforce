@@ -90,7 +90,7 @@ export async function createConfigurationFile() {
     if ( gitServices.git === GitServices.GitLab && !process.env.GITLAB_TOKEN) {
       logWarning('A fin de que la herramienta funcione debe configurar una variable de entorno GITLAB_TOKEN');  
     }
-    const models: Choice[] = valuesToChoices(getFiles(COMMAND_FOLDER, filterDirectory ));
+    const models: Choice[] = readJsonSync(`${COMMAND_FOLDER}/models.json`);
     const automationModel = await prompts([{
       type: "select",
       name: "model",
@@ -125,7 +125,7 @@ export async function createConfigurationFile() {
       const backlogColumn = await prompts([{
         type: "text",
         name: "backlogColumn",
-        initial: 'Backlog',
+        initial: 'Todo',
         message: "Nombre de la columna donde se crean nuevos issues"
       }]);
       optionals['backlogColumn'] = backlogColumn.backlogColumn;
@@ -253,5 +253,11 @@ export function convertKeyToName( key: string ): string {
       .split(' ')
       .map( (word: string) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+}
+
+export function readJsonSync(filename: string): prompts.Choice[] {
+  const content = fs.readFileSync(filename, "utf8");
+  const data = JSON.parse(content);
+  return data;
 }
 

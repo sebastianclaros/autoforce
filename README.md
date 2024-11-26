@@ -5,8 +5,11 @@ El proyecto esta en Beta todavia, recien fue migrado a Typescript y paso de ser 
 
 ## Objetivo
 
-La motivacion de crear la herramienta fue facilitar y automatizar las tareas comunes que realizamos los desarrolladores, especialmente los que utilizacion Salesforce. 
-A medida que pasa el tiempo tenemos cada vez mas herramientas diarias y especificas, pero las tareas en si son las mismas, queremos arrancar a desarrollar algo nuevo (start), terminar el desarrollo(finish), o bien dejarlo a un costado (stop), y posiblemente cancelar por completo alguno (cancel).
+La motivacion de crear la herramienta fue facilitar y automatizar las tareas comunes que realizamos los desarrolladores, especialmente los que utilizamos Salesforce.
+
+Me vi en la necesidad de tener una herramienta porque muchas veces me ganaba la ansiedad y queria hacer varios cambios juntos. Sentia que hacer varios stories, cada una con su branch, y todo el proceso era perder mucho tiempo. Pero cuando uno logra automatizar el repositorio queda mas prolijo y la trazabilidad tambien, y permite que otros desarrolladores puedan colaborar de forma mas simple.
+
+En general cuando desarrollamos, repetimos mas o menos las mismas tareas. Arrancamos a desarrollar algo nuevo (start), terminamos ese desarrollo(finish), o bien dejarlo a un costado (stop), y posiblemente lo descartamos por completo (cancel). Dependiendo la tecnologia, el tipo de desarrollo, y que estrategia de branching, entre otras cosas mas, estas tareas podrian ser distintas.
 
 En este repo las tareas buscan automatizar o integrar el siguiente tipo gestiones:
 
@@ -30,7 +33,7 @@ En este repo las tareas buscan automatizar o integrar el siguiente tipo gestione
 
     - [Model B] "Desarrollo de Producto": 0%
 
-    - [Custom] "Modelo configurado fuera de la herramienta" 
+    - [Custom] "Modelo personalizado" 
 
 2. Github Services
     - Github: Listo
