@@ -33,6 +33,7 @@ class Context implements IObjectRecord {
     gitServices: GitServices = GitServices.None; 
     isGitApi = false;
     gitApi: IGitApi | undefined;
+    version :string | undefined;    
 
     projectServices: ProjectServices = ProjectServices.None; 
     isProjectApi = false;
@@ -291,10 +292,18 @@ class Context implements IObjectRecord {
 
     async validate(guards: string[] ) {
         for(const guard of guards) {
-            const value = await this.get(guard);
-            if ( !value ) {
-                throw new Error(`No se encontro la variable ${guard} en el contexto. Ejecute yarn auto config o lea el index.md para mas informacion.`);
+            // Chequeo de variables de entorno
+            if ( guard[0] === '$' ){
+                if ( !process.env[guard.substring(1)] ) {
+                    throw new Error(`La variable de entorno ${guard} no esta configurada.`);
+                }
+            } else {                
+                const value = await this.get(guard);
+                if ( !value ) {
+                    throw new Error(`No se encontro la variable ${guard} en el contexto. Ejecute yarn auto config o lea el index.md para mas informacion.`);
+                }
             }
+            
         }
     }
 
@@ -532,7 +541,7 @@ class Context implements IObjectRecord {
             return text; 
         }
 
-        const matches = text.matchAll(/\$\{([^}]+)}/g);
+        const matches = text.matchAll(/\$0.1.9\{([^}]+)}/g);
         // si no tiene para merge
         if( matches === null ) {
             return text; 

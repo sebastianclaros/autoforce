@@ -1,6 +1,6 @@
 {
   "name": "publish",
-  "guards": ["isGitApi"],
+  "guards": ["$NPM_TOKEN"],
   "description": "Comando para publicar un requerimiento al ambiente",
   "steps": [
     { "name": "Paquetiza", "subtask": "pack" },

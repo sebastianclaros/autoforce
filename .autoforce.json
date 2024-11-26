@@ -1,0 +1,8 @@
+{
+  "version": "0.1.9",
+  "model": "modelC",
+  "gitServices": "github",
+  "projectServices": "github",
+  "projectId": "4",
+  "backlogColumn": "Todo"
+}

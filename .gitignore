@@ -4,7 +4,6 @@ logs
 npm-debug.log*
 
 # Autoforce
-.autoforce.json
 autoforce*.tgz
 
 # Dependency directories

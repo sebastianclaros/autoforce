@@ -5,6 +5,7 @@ import { logError} from "./helpers/color.js";
 import prompts from "prompts";
 import type { CommandFunction, CommandTaskFunction,  ConfigArguments } from "./types/auto.js";
 import { createConfigurationFile } from "./helpers/util.js";
+import context from "./helpers/context.js";
 
 const proxyCommand: Record<string, CommandFunction> = {
     'version': showVersion, 
@@ -18,7 +19,7 @@ const taskCommand: Record<string, CommandTaskFunction> = {
 }
 
 async function  showVersion() {
-    console.log('AutoForce v0.1.9');
+    console.log('AutoForce v' + context.version);
     return true;
 }
 
