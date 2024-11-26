@@ -508,7 +508,7 @@ class Context implements IObjectRecord {
     }
     setObject( obj: ObjectRecord ) {
         for ( const field in obj ) {
-            Object.defineProperty(this, field, obj[field]);
+            Object.defineProperty(this, field, { value: obj[field], writable: true});
         }
     }
 
