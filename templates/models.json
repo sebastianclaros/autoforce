@@ -1,0 +1,13 @@
+[
+    { 
+        "title": "Procesos de Negocio en Salesforce",
+        "value": "modelA",
+        "description": "Documenta Clases, Objetos y LWC a traves de procesos de negocios. Se basa en docusaurus"0
+    },
+    { 
+        "title": "Proyecto simple en Github Docs",
+        "value": "modelB",
+        "description": "Github pages con changelog, readme y carpeta docs de Markdowns"
+    }
+]
+

@@ -1,10 +1,7 @@
 import fs from "fs";
 import Handlebars from "handlebars";
 import { merge } from "./merge.js";
-import { fileURLToPath } from 'url';
-import { getFiles, searchInFolderHierarchy } from "./util.js";
-
-const TEMPLATE_ROOT_FOLDER = searchInFolderHierarchy('templates', fileURLToPath(import.meta.url));
+import { getFiles } from "./util.js";
 
 function isObjectEmpty(objectName: object) {
   return (
@@ -35,14 +32,14 @@ function openTemplate(sourceFolder: string, templateName: string, extension: str
   return content;
 }
 
-class TemplateEngine<T> {
+class TemplateEngine{
   _template: HandlebarsTemplateDelegate | undefined;
   _rendered: string | undefined;
   _extension: string;
   _sourceFolder: string;
 
   constructor (source: string, extension: string) {
-    this._sourceFolder = `${TEMPLATE_ROOT_FOLDER}/${source}`;
+    this._sourceFolder = source;
     if (!fs.existsSync(this._sourceFolder)) {
       throw new Error(`La carpeta source ${this._sourceFolder} no existe!`);
     }

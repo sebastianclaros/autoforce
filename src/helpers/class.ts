@@ -1,15 +1,15 @@
 import { ObjectRecord, DocumentationModule } from "../types/auto.js";
 import sf from "./connect.js";
 import templateGenerator from "./template.js";
-const templateEngine = templateGenerator("dictionary", "md");
+import {DICTIONARY_FOLDER, TEMPLATE_MODEL_FOLDER} from "./util.js"
+
+const templateEngine = templateGenerator(`${TEMPLATE_MODEL_FOLDER}/dictionary`, "md");
 
 import {
   sortByName,
   getNamesByExtension,
   verFecha,
-  splitFilename,
-  DICTIONARY_FOLDER,
-  TEMPLATES_FOLDER
+  splitFilename
 } from "./util.js";
 
 
@@ -216,7 +216,7 @@ async function executeClasses(items: string[], filename: string, folder: string)
       classLink
     }
   });
-  templateEngine.save(filename, TEMPLATES_FOLDER + "/" + folder);
+  templateEngine.save(filename,  + "/" + folder);
 }
 
 

@@ -1,5 +1,5 @@
 import { executeShell, getOrganizationObject, getCurrentOrganization, getBranchName, getTargetOrg } from "./taskFunctions.js"
-import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems, CONFIG_FILE, createConfigurationFile, getDataFromPackage } from "./util.js";
+import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems, CONFIG_FILE, createConfigurationFile, getDataFromPackage, TEMPLATES_FOLDER } from "./util.js";
 import {GitHubApi} from "./github-graphql.js";
 import {GitHubProjectApi} from "./github-project-graphql.js";
 import {GitLabApi} from "./gitlab-graphql.js";
@@ -29,7 +29,8 @@ const ISSUES_TYPES = [ { value: 'feature', title: 'feature' }, { value: 'bug', t
   
 class Context implements IObjectRecord {
     [s: string]: AnyValue | undefined;
-    model: string = 'modelA'; // Default Model
+    model: string = 'modelA'; // Default Model de commands
+    modelTemplates: string = 'modelA'; // Default Model de templates
     gitServices: GitServices = GitServices.None; 
     isGitApi = false;
     gitApi: IGitApi | undefined;
@@ -570,6 +571,7 @@ class Context implements IObjectRecord {
 const context = new Context();
 context.loadConfig();
 let initialized = false;
+
 export function initializeContext() {
     try {
         if ( initialized === false) {

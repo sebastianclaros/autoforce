@@ -5,10 +5,11 @@ import { ProjectServices, GitServices } from "./context.js";
 import { logInfo, logWarning } from "./color.js";
 import { AnyValue, ObjectRecord } from "../types/auto.js";
 const COMMAND_FOLDER = searchInFolderHierarchy('commands', fileURLToPath(import.meta.url));
-export const TEMPLATES_FOLDER = searchInFolderHierarchy('templates', fileURLToPath(import.meta.url));
-export const DICTIONARY_FOLDER = TEMPLATES_FOLDER + "/diccionarios";
-export const WORKING_FOLDER = process.env.INIT_CWD || ".";
 export const CONFIG_FILE = process.cwd() + '/.autoforce.json';
+export const TEMPLATES_FOLDER = searchInFolderHierarchy('templates', fileURLToPath(import.meta.url));
+export const TEMPLATE_MODEL_FOLDER = TEMPLATES_FOLDER + '/' + getConfig('modelTemplates', 'modelA');
+export const DICTIONARY_FOLDER =  TEMPLATE_MODEL_FOLDER + "/diccionarios";
+export const WORKING_FOLDER = process.env.INIT_CWD || ".";
 export const filterJson = (fullPath: string): boolean => fullPath.endsWith(".json");
 export const filterDirectory = (fullPath: string): boolean => fs.lstatSync(fullPath).isDirectory();
 export const filterFiles = (fullPath: string): boolean => !fs.lstatSync(fullPath).isDirectory();
@@ -138,8 +139,17 @@ export async function createConfigurationFile() {
       message: "Id del proyecto"
     }]);  
 
+// Modelo de Dcumentacion
+const modelsTemplates: Choice[] = readJsonSync(`${TEMPLATES_FOLDER}/models.json`);
+const modelTemplates = await prompts([{
+  type: "select",
+  name: "model",
+  message: "Elija un modelo de documentacion",
+  choices: modelsTemplates 
+  }]);
+
 //    console.log('Genera documentacion');
-  const config = { model: automationModel.model, gitServices: gitServices.git, projectServices: projectServices.project, projectId: projectId.projectId, ...optionals };
+  const config = { model: automationModel.model, modelTemplates: modelTemplates.model ,gitServices: gitServices.git, projectServices: projectServices.project, projectId: projectId.projectId, ...optionals };
   
   try {
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
@@ -149,7 +159,20 @@ export async function createConfigurationFile() {
 
   return true;
 }
-
+export function getConfig(variable:string, defaultValue: AnyValue) {
+  if ( fs.existsSync(CONFIG_FILE) ) {
+    const content = fs.readFileSync(CONFIG_FILE, "utf8");
+    try {
+      const config = JSON.parse(content);
+      if ( config[variable] ) {
+        return config[variable];
+      } 
+    } catch { 
+      return defaultValue;
+    }
+  }
+  return defaultValue;
+}
 export function storeConfig(variable:string, value: AnyValue) {
   let config: ObjectRecord= {};
   if ( fs.existsSync(CONFIG_FILE) ) {
