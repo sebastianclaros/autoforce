@@ -164,14 +164,13 @@ export function createObject(fields: ObjectRecord, values: AnyValue[]) {
 }    
 
 async function runStep(step: Step, tabs: string) {
-
   if ( typeof (step as IStepCommand).command === 'string' ) {
     return executeCommand(step as IStepCommand);
   } else if ( typeof (step as IStepFunction).function === 'string' ) {
     return await executeFunction(step as IStepFunction);
   } else if ( typeof (step as IStepTask).subtask === 'string') {
     const subtask = getTask((step as IStepTask).subtask, SUBTASKS_FOLDER);    
-    let stepContext = context.mergeArgs(step.arguments);
+    let stepContext = step.arguments ? context.mergeArgs(step.arguments): {};
     if ( Array.isArray(stepContext) ) {
       stepContext = createObject( subtask.arguments, stepContext);    
     }     

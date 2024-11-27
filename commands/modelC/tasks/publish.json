@@ -1,9 +1,13 @@
 {
   "name": "publish",
   "guards": ["$NPM_TOKEN"],
+  "arguments": {
+    "newVersion": { "required": true }
+  },
   "description": "Comando para publicar un requerimiento al ambiente",
   "steps": [
     { "name": "Paquetiza", "subtask": "pack" },
-    { "name": "Publica", "command": "yarn publish" }
+    { "name": "Actualiza la version", "function": "storeConfig", "arguments": ["version", "${newVersion}"] },
+    { "name": "Publica", "command": "yarn publish  ", "arguments": {"--new-version": "${newVersion}"} }
   ]
 }

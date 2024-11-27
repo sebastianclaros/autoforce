@@ -7,6 +7,7 @@ import templateGenerator from "./template.js";
 import { getColored } from "./color.js";
 import type { IStepCommand, IStepFunction, StepArguments, TaskFunction } from "../types/helpers/tasks.js";
 import { AnyValue, ObjectRecord } from "../types/auto.js";
+import { storeConfig } from "./util.js";
 
 function createTemplate( templateFolder: string, templateExtension: string, template: string, filename: string, folder: string, context: ObjectRecord) {
     if (!template || !filename || !templateFolder || !templateExtension) {
@@ -226,6 +227,12 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         logInfo('Error omitido por configuracion del step');
         return true; 
     },
+
+    storeConfig(variable:string, value:AnyValue) {
+        storeConfig(variable,value);
+        return true;
+    },
+
     async docProcess() { 
         if ( !context.process ) {
             return false;

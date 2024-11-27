@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import prompts, { Choice } from "prompts";
 import { ProjectServices, GitServices } from "./context.js";
 import { logInfo, logWarning } from "./color.js";
+import { AnyValue, ObjectRecord } from "../types/auto.js";
 const COMMAND_FOLDER = searchInFolderHierarchy('commands', fileURLToPath(import.meta.url));
 export const TEMPLATES_FOLDER = searchInFolderHierarchy('templates', fileURLToPath(import.meta.url));
 export const DICTIONARY_FOLDER = TEMPLATES_FOLDER + "/diccionarios";
@@ -141,7 +142,7 @@ export async function createConfigurationFile() {
   const config = { model: automationModel.model, gitServices: gitServices.git, projectServices: projectServices.project, projectId: projectId.projectId, ...optionals };
   
   try {
-      fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
   } catch {
     throw new Error(`No se pudo guardar la configuracion en ${CONFIG_FILE}`  );
   }
@@ -149,6 +150,20 @@ export async function createConfigurationFile() {
   return true;
 }
 
+export function storeConfig(variable:string, value: AnyValue) {
+  let config: ObjectRecord= {};
+  if ( fs.existsSync(CONFIG_FILE) ) {
+    const content = fs.readFileSync(CONFIG_FILE, "utf8");
+    try {
+      config = JSON.parse(content);
+    } catch {
+      throw new Error(`Verifique que el ${CONFIG_FILE} sea json valido`  );
+    }
+  }
+  config[variable] = value;
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
+
+}
 export function sortByName(objA: {Name: string}, objB: {Name: string}) {
   return objA.Name > objB.Name ? 1 : objA.Name < objB.Name ? -1 : 0;
 }
