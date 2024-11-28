@@ -1,0 +1,4 @@
+
+{{#each issues}}
+* {{title}}
+{{/each}}

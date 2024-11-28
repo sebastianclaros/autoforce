@@ -19,6 +19,7 @@ interface IGitApi {
 interface IProjectApi {
     moveIssue: (issueNumber: string, state: string) => Promise<boolean>;
     getIssues(): Promise<IIssueObject[]>;
+    getIssuesByMilestone(milestone?: string): Promise<IIssueObject[]>;
     getIssueObject(issueNumber: string): Promise<IIssueObject>;
     assignIssueToMe: (issueNumber: string)=> Promise<boolean>;    
     createIssue: (title, state?: string, label?: string, body?: string, milestone?: string) => Promise<number>;

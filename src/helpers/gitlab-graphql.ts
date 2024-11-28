@@ -22,7 +22,11 @@ export class GitLabApi implements IGitApi, IProjectApi {
     async  getIssues() {
       return [];
     }
-   
+    
+    async  getIssuesByMilestone(milestone: string) {
+      return [];
+    }
+
     async createIssue(title: string, state?: string, label?: string, body?: string, milestone?: string ) {
       console.log(title, state, label, body, milestone);
       return 1 ;  

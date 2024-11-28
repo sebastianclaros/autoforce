@@ -443,7 +443,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         
         return true;
     },
-
+  
     async listIssues(): Promise<boolean>  {
         if ( !context.projectApi ){
             return false;

@@ -137,23 +137,30 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
 
     return issueObject;
   }
-
   async getIssues() {
+    return await this.getIssuesWithFilter( `{ states: OPEN }` );
+  }
+  
+  async getIssuesByMilestone(milestone: string) {
+    return await this.getIssuesWithFilter( `{ milestone: ${milestone} }` );
+  }
+
+  async getIssuesWithFilter( filterBy: string) {
     const query = `
-    query getIssue($owner:String!, $repo: String!) {
-      repository(owner: $owner, name: $repo) {
-        issues(last: 10) {
-          nodes {
-            title
-            id          
+        query getIssues($owner:String!, $repo: String!) {
+          repository(owner: $owner, name: $repo) {
+            issues(last: 10, filterBy: ${filterBy} ) {
+              nodes {
+                title
+                id          
+              }
+            }
           }
         }
-      }
-    }
-`; 
-const { repository }: { repository: { issues: { nodes: { id: string, title: string } [] }} } = await this.graphqlAuth(query, this.repoVar);
-return repository.issues.nodes;
-}
+    `; 
+    const { repository }: { repository: { issues: { nodes: { id: string, title: string } [] }} } = await this.graphqlAuth(query, this.repoVar);
+    return repository.issues.nodes;
+  }
 
 
   async  moveIssue(issueNumber: string, state: string): Promise<boolean> {
