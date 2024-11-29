@@ -1,4 +1,4 @@
-new:
-  label: Command New
-  permalink: /new
-  description: Comando New
+git:
+  label: Git
+  permalink: /git
+  description: Git

@@ -9,7 +9,7 @@ const config: Config = {
   tagline: 'Autoforce ',
   favicon: 'img/favicon.ico',
   url: "https://sebastianclaros.github.io", // Your website URL
-  baseUrl: "/",
+  baseUrl: "/autoforce",
   projectName: "sebastianclaros.github.io",
   organizationName: "sebastianclaros",
   onBrokenLinks: "log",
@@ -35,7 +35,8 @@ const config: Config = {
           // Remove this to remove the "edit this page" links.
           editUrl: "https://github.com/sebastianclaros/autoforce/tree/main"
         },
-//        blog: false,
+
+        //        blog: false,
 
         blog: {
           showReadingTime: true,
@@ -50,7 +51,7 @@ const config: Config = {
           // Useful options to enforce blogging best practices
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
+          onUntruncatedBlogPosts: 'ignore',
         },
         theme: {
           customCss: './src/css/custom.css',
@@ -71,17 +72,18 @@ const config: Config = {
       items: [
         {
           type: 'docSidebar',
-          sidebarId: 'commands',
+          sidebarId: 'docs',
           position: 'left',
-          label: 'Commandos',
+          label: 'Docs',
         },
         {
           type: 'docSidebar',
-          sidebarId: 'modelos',
+          sidebarId: 'tutorial',
           position: 'left',
-          label: 'Modelos',
+          label: 'Tutoriales',
         },
-        {to: '/blog', label: 'Blog', position: 'left'},
+        {to: '/blog', label: 'Blog', position: 'right'},
+        {to: 'https://github.com/users/sebastianclaros/projects/4', label: 'Roadmap', position: 'right'},
         {
           href: 'https://github.com/sebastianclaros/autoforce',
           label: 'GitHub',
