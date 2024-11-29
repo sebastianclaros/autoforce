@@ -1,7 +1,7 @@
 import fs from "fs";
 import { fileURLToPath } from 'url';
 import prompts, { Choice } from "prompts";
-import { ProjectServices, GitServices } from "./context.js";
+import context, { ProjectServices, GitServices } from "./context.js";
 import { logInfo, logWarning } from "./color.js";
 import { AnyValue, ObjectRecord } from "../types/auto.js";
 const COMMAND_FOLDER = searchInFolderHierarchy('commands', fileURLToPath(import.meta.url));
@@ -66,24 +66,27 @@ export function getDataFromPackage() {
   return data;
 
 }
+
+export function findChoicesPosition( choices: Choice[], value: string) {
+  const index =  choices.findIndex( choice => choice.value === value );
+  return index === -1 ? 0: index;
+}
 export async function createConfigurationFile() {
   // Todo: Chequear el repoOwner y repo
-  const data = getDataFromPackage();
-  const optionals: Record<string,string> = {};
-  
-  if ( !data.repositoryOwner || !data.repositoryRepo ) {
-    throw new Error('No se encontro repository en el package.json ! Por favor agreguelo y vuelva a intentar');  
-  }
-  const initialServices = data.repositoryUrl.includes("github.com") ? 0: 1;
+  const config = { backlogColumn: context.backlogColumn, model: context.model, modelTemplates: context.modelTemplates ,gitServices: context.gitServices, projectServices: context.projectServices, projectId: context.projectId };
+
+  const gitChoices = [ { title: 'Github', value: GitServices.GitHub }, { title: 'Gitlab', value:  GitServices.GitLab}];
 
   // Preguntar por GitHub o GitLab
   const gitServices = await prompts([{
-    type: "select",
-    name: "git",
-    initial: initialServices,
-    message: "Elija un servicio de Git",
-    choices: [ { title: 'Github', value: GitServices.GitHub }, { title: 'Gitlab', value:  GitServices.GitLab}]
+      type: "select",
+      name: "git",
+      message: "Elija un servicio de Git",
+      initial: findChoicesPosition( gitChoices,  config.gitServices),
+      choices: gitChoices
     }]);
+    if ( gitServices.git === undefined) return false;
+    config.gitServices = gitServices.git;
 
     //  Chequear las variables de entorno 
     if ( gitServices.git === GitServices.GitHub && !process.env.GITHUB_TOKEN) {
@@ -92,13 +95,20 @@ export async function createConfigurationFile() {
     if ( gitServices.git === GitServices.GitLab && !process.env.GITLAB_TOKEN) {
       logWarning('A fin de que la herramienta funcione debe configurar una variable de entorno GITLAB_TOKEN');  
     }
+
+    // Selecciona el modelo de automatizacion
     const models: Choice[] = readJsonSync(`${COMMAND_FOLDER}/models.json`);
+    models.push( { title: 'Personalizado', value: 'custom', description: 'En este caso los comandos son configurados fuera de la herramienta y los lee de la carpeta commands en el root del repo' });     
     const automationModel = await prompts([{
       type: "select",
       name: "model",
       message: "Elija un modelo de automatizacion",
-      choices: models.concat([{ title: 'Personalizado', value: 'custom', description: 'En este caso los comandos son configurados fuera de la herramienta y los lee de la carpeta commands en el root del repo' } ]) 
+      initial: findChoicesPosition( models,  config.model ),
+      choices: models 
       }]);
+    if ( automationModel.model === undefined) return false;
+    config.model = automationModel.model;
+
     // Si es custom pregunta si quiere tomar de base alguno existente
     if ( automationModel.model === 'custom' ) {
       const baseModel = await prompts([{
@@ -111,45 +121,53 @@ export async function createConfigurationFile() {
         console.log('copy archivos..');
       }
     }
+
     // Gestion del Proyecto
+    const projectChoices = [ { title: 'Github Projects', value: ProjectServices.GitHub}, { title: 'GitLab Projects', value: ProjectServices.GitLab} , { title: 'Jira', value: ProjectServices.Jira}  , { title: 'None', value: ProjectServices.None} ]
     const projectServices = await prompts([{
       type: "select",
       name: "project",
-      initial: initialServices,
       message: "Gestion de proyecto",
-      choices: [ { title: 'Github Projects', value: ProjectServices.GitHub}, { title: 'GitLab Projects', value: ProjectServices.GitLab} , { title: 'Jira', value: ProjectServices.Jira}  , { title: 'None', value: ProjectServices.None} ]
+      initial: findChoicesPosition( projectChoices,  config.projectServices),
+      choices: projectChoices
     }]);
+    if ( projectServices.project === undefined) return false;
+    config.projectServices = projectServices.project;;     
 
-    
-    if ( projectServices.project === ProjectServices.GitHub || projectServices.project === ProjectServices.GitLab) {
-      
+    if ( projectServices.project === ProjectServices.GitHub || projectServices.project === ProjectServices.GitLab) {      
       // Gestion del Proyecto
       const backlogColumn = await prompts([{
         type: "text",
         name: "backlogColumn",
-        initial: 'Todo',
+        initial: config.backlogColumn,
         message: "Nombre de la columna donde se crean nuevos issues"
       }]);
-      optionals['backlogColumn'] = backlogColumn.backlogColumn;
-      logInfo(`Por omision ser utilizan proyectos dentro de ${data.repositoryOwner} y ${data.repositoryRepo} `);  
+      if ( backlogColumn.backlogColumn === undefined) return false;      
+      config.backlogColumn = backlogColumn.backlogColumn;
+      logInfo(`Por omision ser utilizan proyectos dentro de ${context.repositoryOwner} y ${context.repositoryRepo} `);  
     }
-    const projectId = await prompts([{
-      type: "text",
-      name: "projectId",
-      message: "Id del proyecto"
-    }]);  
 
-// Modelo de Dcumentacion
-const modelsTemplates: Choice[] = readJsonSync(`${TEMPLATES_FOLDER}/models.json`);
-const modelTemplates = await prompts([{
-  type: "select",
-  name: "model",
-  message: "Elija un modelo de documentacion",
-  choices: modelsTemplates 
+  // Id de Projecto
+  const projectId = await prompts([{
+    type: "text",
+    name: "projectId",
+    initial: config.projectId,
+    message: "Id del proyecto"
+  }]);  
+  if ( projectId.projectId === undefined) return false;      
+  config.projectId = projectId.projectId;
+
+  // Modelo de Dcumentacion
+  const modelsTemplates: Choice[] = readJsonSync(`${TEMPLATES_FOLDER}/models.json`);
+  const modelTemplates = await prompts([{
+    type: "select",
+    name: "model",
+    message: "Elija un modelo de documentacion",
+    initial: findChoicesPosition( modelsTemplates,  config.modelTemplates ),
+    choices: modelsTemplates 
   }]);
-
-//    console.log('Genera documentacion');
-  const config = { model: automationModel.model, modelTemplates: modelTemplates.model ,gitServices: gitServices.git, projectServices: projectServices.project, projectId: projectId.projectId, ...optionals };
+  if ( modelTemplates.model === undefined) return false;      
+  config.modelTemplates = modelTemplates.model;
   
   try {
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );

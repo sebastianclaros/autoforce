@@ -1,8 +1,8 @@
 {
-  "version": "0.1.10",
+  "backlogColumn": "Todo",
   "model": "modelC",
+  "modelTemplates": "modelB",
   "gitServices": "github",
   "projectServices": "github",
-  "projectId": "4",
-  "backlogColumn": "Todo"
+  "projectId": "4"
 }

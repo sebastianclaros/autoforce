@@ -70,6 +70,10 @@ class TemplateEngine{
     this._rendered = this._template(context, options);
   }
 
+  get rendered()  {
+    return this._rendered;
+  }
+
   save (filename: string, folder: string, options: SaveTemplateOptions = { create: true, overwrite: true})  {
     let accion = "creo";
     if (folder && !fs.existsSync(folder)) {

@@ -77,6 +77,11 @@ class Context implements IObjectRecord {
     projectId: string | undefined;
     backlogColumn = 'Todo';
 
+    constructor() {
+        this.loadConfig();
+        this.loadPackage();
+        
+    }
     loadProjectApi() {
         if ( !this.isProjectApi ) {
             if ( this.projectServices == ProjectServices.GitHub && process.env.GITHUB_TOKEN ) {
@@ -150,13 +155,24 @@ class Context implements IObjectRecord {
         this.repositoryRepo = data.repositoryRepo;        
     }
 
-    loadConfig() {
+    async loadConfig() {
         if ( !fs.existsSync(CONFIG_FILE) ) {
-            logWarning('Bienvenido! Antes de usar la herramienta, tenemos que configurarla.');
-            logWarning('Lo puedes hacer mas tarde manualmente leyendo la documentacion y creando .autoforce.json en el root del proyecto'); 
-            logWarning('O bien ahora con el asistente, el mismo lo puedes llamar todas las veces que necesites corriendo npx autoforce config!' );
-            createConfigurationFile();
-            return; 
+            logWarning('Bienvenido! La herramienta Autoforce necesita un primer paso de configuracion antes de usarla.');
+            logWarning('- Podes usar el asistente ejecutando npx autoforce config' );
+            logWarning('- Podes hacerlo manualmente leyendo la documentacion y creando .autoforce.json manualmente en el root del proyecto (https://sebastianclaros.github.io/autoforce/docs/configuracion)'); 
+
+            const answer = await prompts([
+                {
+                  type: "confirm",
+                  name: "asistente",
+                  message: "Queres ejecutar el asistente ahora?"
+                }
+              ]);  
+            if ( answer.asistente ) {
+                await createConfigurationFile();
+                return true; 
+            } 
+            return false;  
         }
         const content = fs.readFileSync(CONFIG_FILE, "utf8");
         try {
@@ -167,13 +183,10 @@ class Context implements IObjectRecord {
         } catch {
           throw new Error(`Verifique que el ${CONFIG_FILE} sea json valido`  );
         }
-      
+        return true
     }
 
     init() {
-        // Busca variables de entorno    
-        this.loadConfig();
-        this.loadPackage();
         this.loadProjectApi();
         this.loadGitApi();
 
@@ -569,7 +582,6 @@ class Context implements IObjectRecord {
 }
 
 const context = new Context();
-context.loadConfig();
 let initialized = false;
 
 export function initializeContext() {

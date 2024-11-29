@@ -7,7 +7,22 @@ import templateGenerator from "./template.js";
 import { getColored } from "./color.js";
 import type { IStepCommand, IStepFunction, StepArguments, TaskFunction } from "../types/helpers/tasks.js";
 import { AnyValue, ObjectRecord } from "../types/auto.js";
-import { storeConfig } from "./util.js";
+import { storeConfig, TEMPLATE_MODEL_FOLDER } from "./util.js";
+
+function generateTemplate( templateFolder: string, templateExtension: string, template: string, context: ObjectRecord) {
+    if (!template || !templateFolder || !templateExtension) {
+        return;
+    }
+    const templateEngine = templateGenerator(templateFolder, templateExtension);
+
+    const formulas = {
+        today: Date.now(),
+    };
+    const view = { ...formulas, ...context};
+    templateEngine.read(template);
+    templateEngine.render(view);
+    return templateEngine.rendered;
+}
 
 function createTemplate( templateFolder: string, templateExtension: string, template: string, filename: string, folder: string, context: ObjectRecord) {
     if (!template || !filename || !templateFolder || !templateExtension) {
@@ -444,14 +459,14 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         return true;
     },
   
-    async listIssues(): Promise<boolean>  {
+    async listIssues(filter: string = '{state: OPEN}', template: string = 'openIssues' ): Promise<boolean>  {
         if ( !context.projectApi ){
             return false;
         }        
         const result = await context.projectApi.getIssues();
-        for( const issue of result) {
-            console.log( issue.title);
-        }
+        const rendered = generateTemplate( TEMPLATE_MODEL_FOLDER , 'md', template, { issues: result, ...context});
+        
+        console.log( rendered);
         return true;
     },    
 
