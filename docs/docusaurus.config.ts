@@ -82,6 +82,12 @@ const config: Config = {
           position: 'left',
           label: 'Tutoriales',
         },
+        {
+          type: 'docSidebar',
+          sidebarId: 'versiones',
+          position: 'left',
+          label: 'Versiones',
+        },
         {to: '/blog', label: 'Blog', position: 'right'},
         {to: 'https://github.com/users/sebastianclaros/projects/4', label: 'Roadmap', position: 'right'},
         {

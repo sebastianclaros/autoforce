@@ -4,5 +4,6 @@
   "modelTemplates": "modelB",
   "gitServices": "github",
   "projectServices": "github",
-  "projectId": "4"
+  "projectId": "4",
+  "version": "0.1.11"
 }
