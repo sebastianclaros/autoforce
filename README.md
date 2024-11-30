@@ -60,19 +60,6 @@ En este repo las tareas buscan automatizar o integrar el siguiente tipo gestione
 
 
 
-## Instalación
-
-```
-yarn add -D autoforce
-```
-
-Chequear instalacion
-
-```
-npx autoforce version
-```
-
-
 ## Usos
 Una vez instalado se puede crear scripts a medida o bien ejecutar 
 
