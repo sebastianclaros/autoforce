@@ -89,7 +89,17 @@ export class GitHubApi implements IGitApi {
   }
 
   async assignBranchToIssue(issueNumber: string, branchName: string, commitSha: string) {
-    const issue = await this.getIssue(issueNumber);
+    const query = `
+        query getIssue($owner:String!, $repo: String!, $issueNumber: Int!) {
+          repository(owner: $owner, name: $repo) {
+            issue(number: $issueNumber) {
+              id
+            }
+          }
+        }
+    `;
+    const { repository }: { repository: { issue: { id: string } } } = await this.graphqlAuth(query, { issueNumber:Number.parseInt(issueNumber),...this.repoVar});
+    const issue = repository.issue;
     const commit = await this.getCommit(commitSha);
     const mutation = `
       mutation createLinkedBranch( $issueId: ID!, $oid: GitObjectID!, $branchName: String!) { 
@@ -108,56 +118,6 @@ export class GitHubApi implements IGitApi {
     return createLinkedBranch?.issue?.id ? true: false ;  
   }
 
-
-async getIssue(issueNumber: string){
-  const query = `
-      query getIssue($owner:String!, $repo: String!, $issueNumber: Int!) {
-        repository(owner: $owner, name: $repo) {
-          issue(number: $issueNumber) {
-            title
-            id
-            labels(first:3, orderBy:  { field: CREATED_AT, direction: DESC}) {
-              nodes {
-                color
-                name
-              }
-            }
-            projectItems(last: 1) {
-              nodes{
-                id, 
-                project {
-                  id
-                }
-                fieldValueByName(name: "Status"){
-      						... on ProjectV2ItemFieldSingleSelectValue {
-                    name
-                    id
-                    field {
-                      ... on ProjectV2SingleSelectField {
-                        id
-                      }
-                    }
-                  }
-                }
-              }
-            }             
-            linkedBranches(last:1){
-                nodes {
-                    ref {
-                      id
-                      name
-                    }
-                }
-            }
-          }
-        }
-      }
-  `; 
-
-  const { repository }: { repository: { issue: { id: string, title: string, labels: { nodes: { name: string, color: string}[] }, projectItems: { nodes: { id: string, project: { id: string },  fieldValueByName: { name: string, id: string, field: { id: string }} }[] }, linkedBranches: { nodes: { ref: { id: string, name: string } } [] } } } } = await this.graphqlAuth(query, { issueNumber:Number.parseInt(issueNumber),...this.repoVar});
-
-  return repository.issue;
-}
 
   async getCommit(commitSha: string) {
     const query = `

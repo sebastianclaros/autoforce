@@ -15,7 +15,7 @@ export class GitLabApi implements IGitApi, IProjectApi {
         this.graphqlAuth.setHeaders({  authorization: `Bearer ${token}` })
     }
 
-    async  getIssueObject(issueNumber: string) {
+    async  getIssue(issueNumber: string) {
       console.log(issueNumber);
       return {};
     }

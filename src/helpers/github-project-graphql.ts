@@ -108,7 +108,7 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
     return issue.number;  
   }
   async getIssueState(issueNumber: string){
-    const issue = await this.getIssue(issueNumber);
+    const issue = await this._getIssue(issueNumber);
     return issue.projectItems?.nodes[0]?.fieldValueByName?.name;
   }
 
@@ -116,9 +116,62 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
     return title.toLowerCase().replaceAll(' ', '-');
   }
 
-  async  getIssueObject(issueNumber: string) {
-    const issue = await this.getIssue(issueNumber);
-    const issueObject: IIssueObject = { title: issue.title};
+  async _getIssue(issueNumber: string){
+    const query = `
+        query getIssue($owner:String!, $repo: String!, $issueNumber: Int!) {
+          repository(owner: $owner, name: $repo) {
+            issue(number: $issueNumber) {
+              title
+              number,
+              id
+              url
+              body
+              labels(first:3, orderBy:  { field: CREATED_AT, direction: DESC}) {
+                nodes {
+                  color
+                  name
+                }
+              }
+              projectItems(last: 1) {
+                nodes{
+                  id, 
+                  project {
+                    id
+                  }
+                  fieldValueByName(name: "Status"){
+                    ... on ProjectV2ItemFieldSingleSelectValue {
+                      name
+                      id
+                      field {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                        }
+                      }
+                    }
+                  }
+                }
+              }             
+              linkedBranches(last:1){
+                  nodes {
+                      ref {
+                        id
+                        name
+                      }
+                  }
+              }
+            }
+          }
+        }
+    `; 
+  
+    const { repository }: { repository: { issue: { number: number, id: string, body: string, url: string, title: string, labels: { nodes: { name: string, color: string}[] }, projectItems: { nodes: { id: string, project: { id: string },  fieldValueByName: { name: string, id: string, field: { id: string }} }[] }, linkedBranches: { nodes: { ref: { id: string, name: string } } [] } } } } = await this.graphqlAuth(query, { issueNumber:Number.parseInt(issueNumber),...this.repoVar});
+  
+    return repository.issue;
+  }
+  
+  async getIssue(issueNumber: string) {
+    const issue = await this._getIssue(issueNumber);
+    const issueObject: IIssueObject = { number: issue.number, title: issue.title, id: issue.id, url: issue.url, body: issue.body };
     issueObject.name = this.getIssueName(issue.title);
     if ( issue.linkedBranches.nodes.length > 0 ) {
       issueObject.branch = issue.linkedBranches.nodes[0].ref.name;
@@ -134,7 +187,6 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
         issueObject.labels.push(node.name);
       }
     }
-
     return issueObject;
   }
   async getIssues() {
@@ -151,7 +203,26 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
           repository(owner: $owner, name: $repo) {
             issues(last: 10, filterBy: ${filterBy} ) {
               nodes {
+                number
                 title
+                body
+                state
+                url
+                milestone {
+                  dueOn
+                  title
+                }
+                labels ( last: 3, orderBy:  { field: CREATED_AT, direction: DESC} ) {
+                  nodes {
+                    color
+                    name
+                  }
+                }
+                assignees ( last: 3, orderBy:  { field: CREATED_AT, direction: DESC} ) {
+                  nodes {
+                    login
+                  }
+                }
                 id          
               }
             }
@@ -164,7 +235,7 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
 
 
   async  moveIssue(issueNumber: string, state: string): Promise<boolean> {
-    const issue = await this.getIssue(issueNumber);
+    const issue = await this._getIssue(issueNumber);
     const itemId = issue.projectItems.nodes[0].id;
     const projectId = issue.projectItems.nodes[0].project.id;  
     const fieldId = issue.projectItems.nodes[0].fieldValueByName.field.id;
@@ -191,7 +262,7 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
 
   async assignIssueToMe(issueNumber: string): Promise<boolean> {
     const user = await this.getUser();
-    const issue = await this.getIssue(issueNumber);
+    const issue = await this._getIssue(issueNumber);
     const mutation = `
       mutation assignUser( $issueId: ID!, $userId: ID!) { 
         addAssigneesToAssignable(input: {

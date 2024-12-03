@@ -354,7 +354,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         if ( context.projectApi === undefined ) {
             return false;
         }
-        const issue = await context.projectApi.getIssueObject(issueNumber);        
+        const issue = await context.projectApi.getIssue(issueNumber);        
         if ( !issue.state ) {
             return false;
         }
@@ -429,33 +429,15 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         
     },    
 
-    async viewIssue(issueNumber: string): Promise<boolean>  {
+    async viewIssue(issueNumber: string, template: string = 'viewIssue'): Promise<boolean>  {
         if ( !context.projectApi ){
             return false;
         }
                 
-        const result = await context.projectApi.getIssueObject(issueNumber);
-        // Branch    
-        if ( result.branch  ) {
-            console.log( result.branch );
-        } else {
-            console.log( 'sin branch' );
-        }
-        // Labels
-        if ( result.labels ) {
-            const labels = [];
-            for ( const label of result.labels){
-                labels.push ( getColored(label, 'cyan') );
-            }    
+        const result = await context.projectApi.getIssue(issueNumber);
+        const rendered = generateTemplate( TEMPLATE_MODEL_FOLDER , 'bash', template, { issue: result, ...context});
         
-            console.log( labels.join( ' ' ) );
-        }
-    
-        // Body
-        if ( result.body ) {
-            console.log( result.body);
-        }
-        
+        console.log( rendered);        
         return true;
     },
   
@@ -464,7 +446,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
             return false;
         }        
         const result = await context.projectApi.getIssues();
-        const rendered = generateTemplate( TEMPLATE_MODEL_FOLDER , 'md', template, { issues: result, ...context});
+        const rendered = generateTemplate( TEMPLATE_MODEL_FOLDER , 'bash', template, { issues: result, ...context});
         
         console.log( rendered);
         return true;
@@ -474,7 +456,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         if ( !context.projectApi ){
             return false;
         }
-        const issue = await context.projectApi.getIssueObject(issueNumber);
+        const issue = await context.projectApi.getIssue(issueNumber);
         // Setea el issueType segun el issue
         try {
             let newIssueType = 'feature';

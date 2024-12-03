@@ -423,7 +423,7 @@ class Context implements IObjectRecord {
 
     async askForprocess() {
         if ( this.projectApi && !this.issueTitle && this.issueNumber ) {
-            const issue = await this.projectApi.getIssueObject(this.issueNumber);
+            const issue = await this.projectApi.getIssue(this.issueNumber);
             this.issueTitle =  issue.title;
         }
         if ( this.issueTitle ) {
