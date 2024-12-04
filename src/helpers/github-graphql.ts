@@ -26,6 +26,45 @@ export class GitHubApi implements IGitApi {
     const {viewer }: {viewer: { login: string, id: number}} = await this.graphqlAuth(query);
     return viewer;
   }
+  async  getLabels() : Promise<ILabel[]>{
+    const query = `
+        query getRepo($owner:String!, $repo: String! ) {
+          repository(owner: $owner, name: $repo) {
+            labels(last: 10, orderBy:  { field: CREATED_AT, direction: DESC}) {
+              nodes{
+                id
+                name
+                color
+              }
+            }
+          }
+        }
+    `; 
+    const { repository }: {repository: { labels: { nodes: { id: string, name: string , color: string }[] } } } = await this.graphqlAuth(query, this.repoVar );
+    
+    return repository.labels.nodes;    
+  }
+
+  async  getMilestones(): Promise<IMilestone[]>{
+    const query = `
+        query getRepo($owner:String!, $repo: String! ) {
+          repository(owner: $owner, name: $repo) {
+            milestones(last: 10, states: OPEN, orderBy: { field: CREATED_AT, direction: DESC} ) {
+              nodes{
+                id
+                number
+                title
+                dueOn
+              }
+            }
+          }
+        }
+    `; 
+    const { repository }: {repository: { milestones: { nodes: { id: string, number: number,  title: string , color: string }[] } } } = await this.graphqlAuth(query, this.repoVar );
+    return repository.milestones.nodes;
+  }
+
+
   async  getRepository(label?: string) {
     const query = `
         query getRepo($owner:String!, $repo: String!, $projectNumber: Int!, ${label ?  '$label: String!': ''} ) {

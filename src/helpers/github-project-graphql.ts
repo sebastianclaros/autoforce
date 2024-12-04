@@ -193,10 +193,6 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
     return await this.getIssuesWithFilter( `{ states: OPEN }` );
   }
   
-  async getIssuesByMilestone(milestone: string) {
-    return await this.getIssuesWithFilter( `{ milestone: ${milestone} }` );
-  }
-
   async getIssuesWithFilter( filterBy: string) {
     const query = `
         query getIssues($owner:String!, $repo: String!) {
@@ -218,7 +214,7 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
                     name
                   }
                 }
-                assignees ( last: 3, orderBy:  { field: CREATED_AT, direction: DESC} ) {
+                assignees ( last: 3 ) {
                   nodes {
                     login
                   }

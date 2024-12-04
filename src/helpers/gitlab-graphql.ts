@@ -15,6 +15,13 @@ export class GitLabApi implements IGitApi, IProjectApi {
         this.graphqlAuth.setHeaders({  authorization: `Bearer ${token}` })
     }
 
+    async getLabels() {
+      return [];
+    }
+    async getMilestones() {
+      return [];
+    }
+
     async  getIssue(issueNumber: string) {
       console.log(issueNumber);
       return {};
@@ -23,7 +30,7 @@ export class GitLabApi implements IGitApi, IProjectApi {
       return [];
     }
     
-    async  getIssuesByMilestone(milestone: string) {
+    async  getIssuesWithFilter(filter: string) {
       return [];
     }
 
