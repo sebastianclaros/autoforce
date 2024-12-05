@@ -82,6 +82,20 @@ class Context implements IObjectRecord {
         this.loadPackage();
         
     }
+    async labels() {
+        const labels = await this.gitApi?.getLabels();
+        if (!labels) {
+            return [];
+        }
+        return labels.map( label => {  return {value: label.name, title: label.name }; } );
+    } 
+    async milestones() {
+        const milestones = await this.gitApi?.getMilestones();
+        if (!milestones) {
+            return [];
+        }
+        return milestones.map( milestone => {  return {value: milestone.id, title: milestone.title }; } );
+    }
     loadProjectApi() {
         if ( !this.isProjectApi ) {
             if ( this.projectServices == ProjectServices.GitHub && process.env.GITHUB_TOKEN ) {
@@ -458,7 +472,7 @@ class Context implements IObjectRecord {
         return answer.newIssueType;
     }
 
-    convertToArrayOfInputs(inputs: TaskArguments): TaskArgument[] {
+    async convertToArrayOfInputs(inputs: TaskArguments): Promise<TaskArgument[]> {
         let inputsArray: TaskArgument[] = [];
         if ( Array.isArray(inputs) ) {
             // Si viene los args como ['name1', 'names] lo convierte a [{name: 'name1'}, {name: 'name2'}]
@@ -466,11 +480,18 @@ class Context implements IObjectRecord {
         } else {
             // Si viene args como objeto { name1: {...}, name2: {...}} lo convierte a [{name: name1...}, {name: name2...}]
             for (const key in inputs) {
-                let initial = typeof inputs[key].default == 'string' ? inputs[key].default: undefined;
-                if ( initial !== undefined ) {
-                    initial = this.merge(initial);
+                if ( typeof inputs[key].default == 'string' ) {
+                    inputs[key].initial = this.merge(inputs[key].default);
                 }
-                inputsArray.push( {...{name: key, type: 'text', initial, message: `Por favor ingrese ${key}?`}, ...inputs[key]} ) ;
+
+                if ( typeof inputs[key].values == 'string' && typeof this[inputs[key].values] == 'function' ) {
+                    const choices = await this[inputs[key].values]();
+                    if ( Array.isArray(choices) ) {
+                        inputs[key].choices = choices;
+                    }
+                }
+
+                inputsArray.push( {...{name: key, type: 'text', message: `Por favor ingrese ${key}?`}, ...inputs[key]} ) ;
             }
         }
         return inputsArray;
@@ -510,7 +531,7 @@ class Context implements IObjectRecord {
 
     async askForArguments(inputs: TaskArguments) {
         // unifica los dos tipos de inputs (array y objeto) en un array de inputs
-        const inputsArray = this.convertToArrayOfInputs(inputs);
+        const inputsArray =  await this.convertToArrayOfInputs(inputs);
 
         for(const input of inputsArray) {
             const hasValue = await this.get(input.name as string);

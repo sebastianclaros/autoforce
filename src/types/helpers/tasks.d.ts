@@ -3,6 +3,7 @@
   
   interface TaskArgument extends PromptObject {
     default?: string;
+    values?: string;
   }
 
 

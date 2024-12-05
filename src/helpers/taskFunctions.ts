@@ -335,11 +335,11 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         console.log('Not implemented');
         return false;
     },
-    async createIssue(title: string, label: string, body?: string): Promise<boolean> {
+    async createIssue(title: string, label: string, body?: string,  milestone?: string): Promise<boolean> {
         if ( context.projectApi === undefined ) {
             return false;
         }
-        const issueNumber = await context.projectApi.createIssue(title, context.backlogColumn, label, body );
+        const issueNumber = await context.projectApi.createIssue(title, context.backlogColumn, label, body, milestone );
         if ( issueNumber) {
             console.log(`Se creo el issue ${issueNumber}`);
             return true;
