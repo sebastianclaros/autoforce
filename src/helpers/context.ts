@@ -3,7 +3,7 @@ import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewI
 import {GitHubApi} from "./github-graphql.js";
 import {GitHubProjectApi} from "./github-project-graphql.js";
 import {GitLabApi} from "./gitlab-graphql.js";
-import prompts from "prompts";
+import prompts, { Choice } from "prompts";
 import matter from 'gray-matter';
 import fs from "fs";
 import type { PromptChoices } from "../types/helpers/context.js";
@@ -15,6 +15,12 @@ export enum GitServices {
     GitHub = 'github',
     GitLab = 'gitlab',
     None = 'none'
+}
+
+export enum ListFilters {
+    Mios = 'mios',
+    PorMilestone = 'milestone',
+    PorLabel = 'label'
 }
 
 export enum ProjectServices {
@@ -35,6 +41,8 @@ class Context implements IObjectRecord {
     isGitApi = false;
     gitApi: IGitApi | undefined;
     version :string | undefined;    
+
+    options: Record<string,AnyValue> = {};
 
     projectServices: ProjectServices = ProjectServices.None; 
     isProjectApi = false;
@@ -77,6 +85,10 @@ class Context implements IObjectRecord {
     projectId: string | undefined;
     backlogColumn = 'Todo';
 
+    //Templates especiales
+    listFilter = ListFilters.Mios;
+    listTemplate = 'openIssues';
+
     constructor() {
         this.loadConfig();
         this.loadPackage();
@@ -89,6 +101,11 @@ class Context implements IObjectRecord {
         }
         return labels.map( label => {  return {value: label.name, title: label.name }; } );
     } 
+
+    listFilters(){
+        const filters: Choice[] = [{  title: 'Solo mios abiertos',  value: ListFilters.Mios,  description: 'Busca los issues donde este asignado y esten en state Open'},{  title: 'Por Milestone',  value: ListFilters.PorMilestone,  description: 'Busca los issues de un deterinado milestone'},{  title: 'Por Label',  value: ListFilters.PorLabel, description: 'Busca los issues de un deterinado label'}];
+        return filters;
+    }
     async milestones() {
         const milestones = await this.gitApi?.getMilestones();
         if (!milestones) {

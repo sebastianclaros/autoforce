@@ -1,15 +1,13 @@
 import {execSync} from "child_process";
-import context from "./context.js";
+import context, { ListFilters } from "./context.js";
 import { logError, logInfo} from "./color.js";
 import metadata from './metadata.js';
 import prompts, { Choice } from "prompts";
 import templateGenerator from "./template.js";
-import { getColored } from "./color.js";
 import type { IStepCommand, IStepFunction, StepArguments, TaskFunction } from "../types/helpers/tasks.js";
 import { AnyValue, ObjectRecord } from "../types/auto.js";
-import { getFiles, storeConfig, TEMPLATE_MODEL_FOLDER, valuesToChoices } from "./util.js";
+import { filterBash, getFiles, storeConfig, TEMPLATE_MODEL_FOLDER, valuesToChoices } from "./util.js";
 
-const filterBash = (fullPath: string): boolean => fullPath.endsWith(".bash");
 
 function generateTemplate( templateFolder: string, templateExtension: string, template: string, context: ObjectRecord) {
     if (!template || !templateFolder || !templateExtension) {
@@ -444,7 +442,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
     },
   
     async listIssues(): Promise<boolean>  {
-        let filter: string = '{state: OPEN}';
+        let filter: string = '{states: OPEN}';
         let template: string = 'openIssues';
 
         if ( !context.projectApi || !context.gitApi){
@@ -457,40 +455,50 @@ export const taskFunctions: { [s: string]: AnyValue } = {
                     name: 'filter', 
                     type: 'select',
                     initial: 0,
-                    choices: [{  title: 'Solo mios abiertos',  value: 'mios',  description: 'Busca los issues donde este asignado y esten en state Open'},{  title: 'Por Milestone',  value: 'milestone',  description: 'Busca los issues de un deterinado milestone'},{  title: 'Por Label',  value: 'label'}]
+                    choices: context.listFilters
                 }
             ]);
             context.listFilter = answer.filter; 
         }
-        if ( context.listFilter === 'milestone' ) {    
-            const choices: {value:number|string, title:string}[] = (await context.gitApi.getMilestones()).map( milestone => {  return {value: milestone.number, title: milestone.title }; } );
-            choices.push( { value: '', title: 'Issues sin Milestone'} );
-            choices.push( { value: '*', title: 'Issues con Milestone'} );
-            const answer = await prompts([
-                {
-                    message: 'Elija un milestone',
-                    name: 'filterValue', 
-                    type: 'select',
-                    initial: 0,
-                    choices 
-                }
-            ]);
-            filter = `{ milestone: "${answer.filterValue}"}`;
+        if ( context.listFilter === ListFilters.PorMilestone ) {    
+            if ( context.options.milestone ) {
+                filter = `{ milestone: "${context.options.milestone}"}`;
+            } else {
+                const choices: {value:number|string, title:string}[] = (await context.gitApi.getMilestones()).map( milestone => {  return {value: milestone.number, title: milestone.title }; } );
+                choices.push( { value: '', title: 'Issues sin Milestone'} );
+                choices.push( { value: '*', title: 'Issues con Milestone'} );
+                const answer = await prompts([
+                    {
+                        message: 'Elija un milestone',
+                        name: 'filterValue', 
+                        type: 'select',
+                        initial: 0,
+                        choices 
+                    }
+                ]);
+                filter = `{ milestone: "${answer.filterValue}"}`;
+                if ( answer.filterValue === undefined ) return false;
+            }
         }
-        if ( context.listFilter === 'label' ) {   
-            const labels = (await context.gitApi.getLabels()).map( label => label.name );
-            const choices = valuesToChoices(labels);
-
-            const answer = await prompts([
-                {
-                    message: 'Elija un label',
-                    name: 'filterValue', 
-                    type: 'select',
-                    initial: 0,
-                    choices
-                }
-            ]);
-            filter = `{labels: "${answer.filterValue}"}`;
+        if ( context.listFilter === ListFilters.PorLabel ) {   
+            if ( context.options.label ) {
+                filter = `{labels: "${context.options.label}"}`;
+            } else {
+                const labels = (await context.gitApi.getLabels()).map( label => label.name );
+                const choices = valuesToChoices(labels);
+    
+                const answer = await prompts([
+                    {
+                        message: 'Elija un label',
+                        name: 'filterValue', 
+                        type: 'select',
+                        initial: 0,
+                        choices
+                    }
+                ]);
+                if ( answer.filterValue === undefined ) return false;
+                filter = `{labels: "${answer.filterValue}"}`;
+            }
         }
 
         if ( !context.listTemplate ) {

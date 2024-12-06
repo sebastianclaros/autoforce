@@ -13,6 +13,7 @@ export const WORKING_FOLDER = process.env.INIT_CWD || ".";
 export const filterJson = (fullPath: string): boolean => fullPath.endsWith(".json");
 export const filterDirectory = (fullPath: string): boolean => fs.lstatSync(fullPath).isDirectory();
 export const filterFiles = (fullPath: string): boolean => !fs.lstatSync(fullPath).isDirectory();
+export const filterBash = (fullPath: string): boolean => fullPath.endsWith(".bash");
 
 export const camelToText = (s: string) => s.replace(/[A-Z]/g, x => ' ' + x);
 export const kebabToText = (s: string) => s.replace(/-./g, x=> ' ' + x[1].toUpperCase())
@@ -73,8 +74,8 @@ export function findChoicesPosition( choices: Choice[], value: string) {
 }
 export async function createConfigurationFile() {
   // Todo: Chequear el repoOwner y repo
-  const config = { backlogColumn: context.backlogColumn, model: context.model, modelTemplates: context.modelTemplates ,gitServices: context.gitServices, projectServices: context.projectServices, projectId: context.projectId };
-
+  const config = { backlogColumn: context.backlogColumn, model: context.model, modelTemplates: context.modelTemplates ,gitServices: context.gitServices, projectServices: context.projectServices, projectId: context.projectId, listFilter: context.listFilter, listTemplate: context.listTemplate  };
+console.log(config);
   const gitChoices = [ { title: 'Github', value: GitServices.GitHub }, { title: 'Gitlab', value:  GitServices.GitLab}];
 
   // Preguntar por GitHub o GitLab
@@ -168,7 +169,35 @@ export async function createConfigurationFile() {
   }]);
   if ( modelTemplates.model === undefined) return false;      
   config.modelTemplates = modelTemplates.model;
-  
+
+
+    // List Command settings
+  const filters = context.listFilters();  
+  const listFilter = await prompts([
+    {
+          message: 'Elija un filtro, o bien lo puede dejar fijo en autoforce como listFilter',
+          name: 'filter', 
+          type: 'select',
+          initial: findChoicesPosition(filters,  config.listFilter ),
+          choices: filters
+      }
+  ]);
+  if ( listFilter.filter === undefined) return false;      
+  config.listFilter= listFilter.filter;
+
+  const files = getFiles(`${TEMPLATES_FOLDER}/${config.modelTemplates}`, filterBash ).map( filename => filename.split(".")[0] );
+  const templates: Choice[] = valuesToChoices(files);
+  const template = await prompts([
+      {
+          message: 'Elija un template, o bien lo puede dejar en autoforce como listTemplate',
+          name: 'template', 
+          type: 'select',
+          initial: findChoicesPosition(templates,  config.listTemplate ),
+          choices: templates
+      }
+  ]);
+  if ( template.template === undefined) return false;      
+  config.listTemplate = template.template;
   try {
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
   } catch {

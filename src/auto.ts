@@ -32,10 +32,10 @@ export default async function main() {
             const taskName = await askForTaskName(config.taskName, tasks);
             if ( taskName ) {        
                 const task = tasks[taskName];
-                const options = config.arguments && task.arguments ? {...config.options, ...createObject( task.arguments, config.arguments)} : config.options;
+                context.options = config.arguments && task.arguments ? {...config.options, ...createObject( task.arguments, config.arguments)} : config.options;
                 // Valida los json de task y subtask
                 if ( validateTask(task) ) {
-                    await taskCommand[config.command](task, options );
+                    await taskCommand[config.command](task, context.options );
                 } else {
                     logError('Verifique que los json de task y subtask esten validos');
                 }
