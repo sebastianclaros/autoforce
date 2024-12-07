@@ -95,11 +95,12 @@ class Context implements IObjectRecord {
         
     }
     async labels() {
+        const choices: Choice[]= [{value: '', title: 'Ninguno' }];
         const labels = await this.gitApi?.getLabels();
-        if (!labels) {
-            return [];
+        if (labels) {
+            labels.forEach( label => choices.push( {value: label.name, title: label.name }) );
         }
-        return labels.map( label => {  return {value: label.name, title: label.name }; } );
+        return choices;
     } 
 
     listFilters(){
@@ -107,11 +108,12 @@ class Context implements IObjectRecord {
         return filters;
     }
     async milestones() {
+        const choices: Choice[] = [{value: '', title: 'Ninguno' }];
         const milestones = await this.gitApi?.getMilestones();
-        if (!milestones) {
-            return [];
+        if (milestones) {
+            milestones.forEach( milestone => choices.push( {value: milestone.id, title: milestone.title }) );
         }
-        return milestones.map( milestone => {  return {value: milestone.id, title: milestone.title }; } );
+        return choices;
     }
     loadProjectApi() {
         if ( !this.isProjectApi ) {

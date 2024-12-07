@@ -61,7 +61,7 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
           }
         }
       }`;
-    const { createIssue }: {createIssue: { issue: { id: string, number: number } }} = await this.graphqlAuth(mutationIssue, { labelId,  body, assignId: user.id,  projectId, repositoryId, title, milestoneId, label: label?  [label]: null });
+    const { createIssue }: {createIssue: { issue: { id: string, number: number } }} = await this.graphqlAuth(mutationIssue, { labelId,  body, assignId: user.id,  projectId, repositoryId, title,  milestoneId: milestoneId?  milestoneId: null  , label: label?  [label]: null });
     const issue = createIssue.issue;
     
     if ( !state || !issue.number) {

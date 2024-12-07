@@ -8,7 +8,7 @@
       "values": "labels"
     },
     "milestone": {
-      "type": "select",
+      "type": "select",      
       "values": "milestones"
     },
     "body": { "required": false }    
