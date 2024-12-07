@@ -441,10 +441,14 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         return true;
     },
   
-    async listIssues(): Promise<boolean>  {
-        let listFilter = context.options.filter || context.listFilter; 
-        let template: string = context.options.template || context.listTemplate;
+    async listIssues(listFilter?:string, listTemplate?:string): Promise<boolean>  {
         let filter: string = '{states: OPEN}';
+        if (!listFilter) {
+            listFilter = listFilter || context.options.filter || context.listFilter; 
+        }
+        if (!listTemplate) {
+            listTemplate = context.options.template || context.listTemplate ;
+        }
 
         if ( !context.projectApi || !context.gitApi){
             return false;
@@ -502,7 +506,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
             }
         }
 
-        if ( !template ) {
+        if ( !listTemplate ) {
             const files = getFiles(TEMPLATE_MODEL_FOLDER, filterBash ).map( filename => filename.split(".")[0] );
             const templates: Choice[] = valuesToChoices(files);
             const answer = await prompts([
@@ -514,10 +518,11 @@ export const taskFunctions: { [s: string]: AnyValue } = {
                     choices: templates
                 }
             ]);
-            template = answer.template;
+            listTemplate =  answer.template;
+            if ( listTemplate === undefined ) return false;
         }
         const result = await context.projectApi.getIssuesWithFilter(filter);
-        const rendered = generateTemplate( TEMPLATE_MODEL_FOLDER , 'bash', template, { issues: result, ...context});
+        const rendered = generateTemplate( TEMPLATE_MODEL_FOLDER , 'bash', listTemplate, { issues: result, ...context});
         
         console.log( rendered);
         return true;
