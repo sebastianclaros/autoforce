@@ -170,8 +170,8 @@ console.log(config);
   if ( modelTemplates.model === undefined) return false;      
   config.modelTemplates = modelTemplates.model;
 
-
-    // List Command settings
+  // TODO: Ver si esto se mueve a un config list
+  // List Command settings
   const filters = context.listFilters();  
   const listFilter = await prompts([
     {

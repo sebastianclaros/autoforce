@@ -5,6 +5,6 @@
   "gitServices": "github",
   "projectServices": "github",
   "projectId": "4",
-  "listFilter": "label",
-  "listTemplate": "openIssues"
+  "listFilter": "milestone",
+  "listTemplate": "other"
 }

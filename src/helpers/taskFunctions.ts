@@ -442,13 +442,14 @@ export const taskFunctions: { [s: string]: AnyValue } = {
     },
   
     async listIssues(): Promise<boolean>  {
+        let listFilter = context.options.filter || context.listFilter; 
+        let template: string = context.options.template || context.listTemplate;
         let filter: string = '{states: OPEN}';
-        let template: string = 'openIssues';
 
         if ( !context.projectApi || !context.gitApi){
             return false;
         }
-        if ( !context.listFilter ) {
+        if ( !listFilter ) {
             const answer = await prompts([
                 {
                     message: 'Elija un filtro, o bien lo puede dejar fijo en autoforce como listFilter',
@@ -458,9 +459,9 @@ export const taskFunctions: { [s: string]: AnyValue } = {
                     choices: context.listFilters
                 }
             ]);
-            context.listFilter = answer.filter; 
+            listFilter = answer.filter; 
         }
-        if ( context.listFilter === ListFilters.PorMilestone ) {    
+        if ( listFilter === ListFilters.PorMilestone ) {    
             if ( context.options.milestone ) {
                 filter = `{ milestone: "${context.options.milestone}"}`;
             } else {
@@ -480,7 +481,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
                 if ( answer.filterValue === undefined ) return false;
             }
         }
-        if ( context.listFilter === ListFilters.PorLabel ) {   
+        if ( listFilter === ListFilters.PorLabel ) {   
             if ( context.options.label ) {
                 filter = `{labels: "${context.options.label}"}`;
             } else {
@@ -501,7 +502,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
             }
         }
 
-        if ( !context.listTemplate ) {
+        if ( !template ) {
             const files = getFiles(TEMPLATE_MODEL_FOLDER, filterBash ).map( filename => filename.split(".")[0] );
             const templates: Choice[] = valuesToChoices(files);
             const answer = await prompts([
