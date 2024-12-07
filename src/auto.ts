@@ -41,7 +41,7 @@ export default async function main() {
                 }
             }
         } else {
-            await proxyCommand[config.command]();
+            await proxyCommand[config.command](config.taskName, config.options);
         }
     } catch(error) {
         if ( error instanceof Error ) {

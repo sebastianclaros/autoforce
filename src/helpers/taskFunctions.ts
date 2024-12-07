@@ -244,7 +244,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
     },
 
     storeConfig(variable:string, value:AnyValue) {
-        storeConfig(variable,value);
+        storeConfig( {[variable]: value} );
         return true;
     },
 

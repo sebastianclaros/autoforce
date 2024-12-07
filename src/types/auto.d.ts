@@ -53,7 +53,7 @@ export type AnyObject = {
     [string]: AnyValue; 
 };
 
-export type CommandFunction = () => Promise<boolean>;
+export type CommandFunction = (taskName: string, options: CommandOptions) => Promise<boolean>;
 export type CommandTaskFunction = (task: ITask, options: CommandOptions, tabs?: string) => Promise<boolean>;
 type ObjectRecord = Record<string, AnyValue>; 
 interface IObjectRecord {

@@ -4,6 +4,7 @@ import prompts, { Choice } from "prompts";
 import context, { ProjectServices, GitServices } from "./context.js";
 import { logInfo, logWarning } from "./color.js";
 import { AnyValue, ObjectRecord } from "../types/auto.js";
+import { config } from "process";
 const COMMAND_FOLDER = searchInFolderHierarchy('commands', fileURLToPath(import.meta.url));
 export const CONFIG_FILE = process.cwd() + '/.autoforce.json';
 export const TEMPLATES_FOLDER = searchInFolderHierarchy('templates', fileURLToPath(import.meta.url));
@@ -72,137 +73,143 @@ export function findChoicesPosition( choices: Choice[], value: string) {
   const index =  choices.findIndex( choice => choice.value === value );
   return index === -1 ? 0: index;
 }
-export async function createConfigurationFile() {
-  // Todo: Chequear el repoOwner y repo
-  const config = { backlogColumn: context.backlogColumn, model: context.model, modelTemplates: context.modelTemplates ,gitServices: context.gitServices, projectServices: context.projectServices, projectId: context.projectId, listFilter: context.listFilter, listTemplate: context.listTemplate  };
-console.log(config);
-  const gitChoices = [ { title: 'Github', value: GitServices.GitHub }, { title: 'Gitlab', value:  GitServices.GitLab}];
 
-  // Preguntar por GitHub o GitLab
-  const gitServices = await prompts([{
-      type: "select",
-      name: "git",
-      message: "Elija un servicio de Git",
-      initial: findChoicesPosition( gitChoices,  config.gitServices),
-      choices: gitChoices
-    }]);
-    if ( gitServices.git === undefined) return false;
-    config.gitServices = gitServices.git;
-
-    //  Chequear las variables de entorno 
-    if ( gitServices.git === GitServices.GitHub && !process.env.GITHUB_TOKEN) {
-      logWarning('A fin de que la herramienta funcione debe configurar una variable de entorno GITHUB_TOKEN');  
-    }
-    if ( gitServices.git === GitServices.GitLab && !process.env.GITLAB_TOKEN) {
-      logWarning('A fin de que la herramienta funcione debe configurar una variable de entorno GITLAB_TOKEN');  
-    }
-
-    // Selecciona el modelo de automatizacion
-    const models: Choice[] = readJsonSync(`${COMMAND_FOLDER}/models.json`);
-    models.push( { title: 'Personalizado', value: 'custom', description: 'En este caso los comandos son configurados fuera de la herramienta y los lee de la carpeta commands en el root del repo' });     
-    const automationModel = await prompts([{
-      type: "select",
-      name: "model",
-      message: "Elija un modelo de automatizacion",
-      initial: findChoicesPosition( models,  config.model ),
-      choices: models 
-      }]);
-    if ( automationModel.model === undefined) return false;
-    config.model = automationModel.model;
-
-    // Si es custom pregunta si quiere tomar de base alguno existente
-    if ( automationModel.model === 'custom' ) {
-      const baseModel = await prompts([{
-        type: "select",
-        name: "model",
-        message: "Quiere tomar algun modelo existente de base ? Este se copiara a la carpeta ",
-        choices: models.concat( [{ title: 'No quiero usar ningun modelo', value: 'none'}])
-        }]);  
-      if ( baseModel.model !== 'none' ) {
-        console.log('copy archivos..');
-      }
-    }
-
-    // Gestion del Proyecto
-    const projectChoices = [ { title: 'Github Projects', value: ProjectServices.GitHub}, { title: 'GitLab Projects', value: ProjectServices.GitLab} , { title: 'Jira', value: ProjectServices.Jira}  , { title: 'None', value: ProjectServices.None} ]
-    const projectServices = await prompts([{
-      type: "select",
-      name: "project",
-      message: "Gestion de proyecto",
-      initial: findChoicesPosition( projectChoices,  config.projectServices),
-      choices: projectChoices
-    }]);
-    if ( projectServices.project === undefined) return false;
-    config.projectServices = projectServices.project;;     
-
-    if ( projectServices.project === ProjectServices.GitHub || projectServices.project === ProjectServices.GitLab) {      
-      // Gestion del Proyecto
-      const backlogColumn = await prompts([{
-        type: "text",
-        name: "backlogColumn",
-        initial: config.backlogColumn,
-        message: "Nombre de la columna donde se crean nuevos issues"
-      }]);
-      if ( backlogColumn.backlogColumn === undefined) return false;      
-      config.backlogColumn = backlogColumn.backlogColumn;
-      logInfo(`Por omision ser utilizan proyectos dentro de ${context.repositoryOwner} y ${context.repositoryRepo} `);  
-    }
-
-  // Id de Projecto
-  const projectId = await prompts([{
-    type: "text",
-    name: "projectId",
-    initial: config.projectId,
-    message: "Id del proyecto"
-  }]);  
-  if ( projectId.projectId === undefined) return false;      
-  config.projectId = projectId.projectId;
-
-  // Modelo de Dcumentacion
-  const modelsTemplates: Choice[] = readJsonSync(`${TEMPLATES_FOLDER}/models.json`);
-  const modelTemplates = await prompts([{
-    type: "select",
-    name: "model",
-    message: "Elija un modelo de documentacion",
-    initial: findChoicesPosition( modelsTemplates,  config.modelTemplates ),
-    choices: modelsTemplates 
-  }]);
-  if ( modelTemplates.model === undefined) return false;      
-  config.modelTemplates = modelTemplates.model;
-
-  // TODO: Ver si esto se mueve a un config list
-  // List Command settings
-  const filters = context.listFilters();  
-  const listFilter = await prompts([
-    {
-          message: 'Elija un filtro, o bien lo puede dejar fijo en autoforce como listFilter',
-          name: 'filter', 
-          type: 'select',
-          initial: findChoicesPosition(filters,  config.listFilter ),
-          choices: filters
-      }
-  ]);
-  if ( listFilter.filter === undefined) return false;      
-  config.listFilter= listFilter.filter;
-
-  const files = getFiles(`${TEMPLATES_FOLDER}/${config.modelTemplates}`, filterBash ).map( filename => filename.split(".")[0] );
-  const templates: Choice[] = valuesToChoices(files);
-  const template = await prompts([
+async function getTaskConfig(config: Record<string, AnyValue>): Promise<Record<string, AnyValue>| undefined> {
+    // TODO: Ver si esto se mueve a un config list
+    // List Command settings
+    const filters = context.listFilters();  
+    const listFilter = await prompts([
       {
-          message: 'Elija un template, o bien lo puede dejar en autoforce como listTemplate',
-          name: 'template', 
-          type: 'select',
-          initial: findChoicesPosition(templates,  config.listTemplate ),
-          choices: templates
-      }
-  ]);
-  if ( template.template === undefined) return false;      
-  config.listTemplate = template.template;
-  try {
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
-  } catch {
-    throw new Error(`No se pudo guardar la configuracion en ${CONFIG_FILE}`  );
-  }
+            message: 'Elija un filtro, o bien lo puede dejar fijo en autoforce como listFilter',
+            name: 'filter', 
+            type: 'select',
+            initial: findChoicesPosition(filters,  config.listFilter ),
+            choices: filters
+        }
+    ]);
+    if ( listFilter.filter === undefined) return ;
+    config.listFilter= listFilter.filter;
+    const files = getFiles(`${TEMPLATES_FOLDER}/${config.modelTemplates}`, filterBash ).map( filename => filename.split(".")[0] );
+    if ( files.length > 0 ) {
+      const templates: Choice[] = valuesToChoices(files);
+      const template = await prompts([
+          {
+              message: 'Elija un template, o bien lo puede dejar en autoforce como listTemplate',
+              name: 'template', 
+              type: 'select',
+              initial: findChoicesPosition(templates,  config.listTemplate ),
+              choices: templates
+          }
+      ]);
+      if ( template.template === undefined) return ;      
+      config.listTemplate = template.template;
+    }
+  return config;
+}
+
+async function getBaseConfig(config: Record<string, AnyValue>): Promise<Record<string, AnyValue> | undefined> {
+   // Todo: Chequear el repoOwner y repo
+   const gitChoices = [ { title: 'Github', value: GitServices.GitHub }, { title: 'Gitlab', value:  GitServices.GitLab}];
+ 
+   // Preguntar por GitHub o GitLab
+   const gitServices = await prompts([{
+       type: "select",
+       name: "git",
+       message: "Elija un servicio de Git",
+       initial: findChoicesPosition( gitChoices,  config.gitServices),
+       choices: gitChoices
+     }]);
+     if ( gitServices.git === undefined) process.exit(0);
+     config.gitServices = gitServices.git;
+ 
+     //  Chequear las variables de entorno 
+     if ( gitServices.git === GitServices.GitHub && !process.env.GITHUB_TOKEN) {
+       logWarning('A fin de que la herramienta funcione debe configurar una variable de entorno GITHUB_TOKEN');  
+     }
+     if ( gitServices.git === GitServices.GitLab && !process.env.GITLAB_TOKEN) {
+       logWarning('A fin de que la herramienta funcione debe configurar una variable de entorno GITLAB_TOKEN');  
+     }
+ 
+     // Selecciona el modelo de automatizacion
+     const models: Choice[] = readJsonSync(`${COMMAND_FOLDER}/models.json`);
+     models.push( { title: 'Personalizado', value: 'custom', description: 'En este caso los comandos son configurados fuera de la herramienta y los lee de la carpeta commands en el root del repo' });     
+     const automationModel = await prompts([{
+       type: "select",
+       name: "model",
+       message: "Elija un modelo de automatizacion",
+       initial: findChoicesPosition( models,  config.model ),
+       choices: models 
+       }]);
+     if ( automationModel.model === undefined) return;
+     config.model = automationModel.model;
+ 
+     // Si es custom pregunta si quiere tomar de base alguno existente
+     if ( automationModel.model === 'custom' ) {
+       const baseModel = await prompts([{
+         type: "select",
+         name: "model",
+         message: "Quiere tomar algun modelo existente de base ? Este se copiara a la carpeta ",
+         choices: models.concat( [{ title: 'No quiero usar ningun modelo', value: 'none'}])
+         }]);  
+       if ( baseModel.model !== 'none' ) {
+         console.log('copy archivos..');
+       }
+     }
+ 
+     // Gestion del Proyecto
+     const projectChoices = [ { title: 'Github Projects', value: ProjectServices.GitHub}, { title: 'GitLab Projects', value: ProjectServices.GitLab} , { title: 'Jira', value: ProjectServices.Jira}  , { title: 'None', value: ProjectServices.None} ]
+     const projectServices = await prompts([{
+       type: "select",
+       name: "project",
+       message: "Gestion de proyecto",
+       initial: findChoicesPosition( projectChoices,  config.projectServices),
+       choices: projectChoices
+     }]);
+     if ( projectServices.project === undefined) return;
+     config.projectServices = projectServices.project;;     
+ 
+     if ( projectServices.project === ProjectServices.GitHub || projectServices.project === ProjectServices.GitLab) {      
+       // Gestion del Proyecto
+       const backlogColumn = await prompts([{
+         type: "text",
+         name: "backlogColumn",
+         initial: config.backlogColumn,
+         message: "Nombre de la columna donde se crean nuevos issues"
+       }]);
+       if ( backlogColumn.backlogColumn === undefined) return ;      
+       config.backlogColumn = backlogColumn.backlogColumn;
+       logInfo(`Por omision ser utilizan proyectos dentro de ${context.repositoryOwner} y ${context.repositoryRepo} `);  
+     }
+ 
+   // Id de Projecto
+   const projectId = await prompts([{
+     type: "text",
+     name: "projectId",
+     initial: config.projectId,
+     message: "Id del proyecto"
+   }]);  
+   if ( projectId.projectId === undefined) return ;      
+   config.projectId = projectId.projectId;
+ 
+   // Modelo de Dcumentacion
+   const modelsTemplates: Choice[] = readJsonSync(`${TEMPLATES_FOLDER}/models.json`);
+   const modelTemplates = await prompts([{
+     type: "select",
+     name: "model",
+     message: "Elija un modelo de documentacion",
+     initial: findChoicesPosition( modelsTemplates,  config.modelTemplates ),
+     choices: modelsTemplates 
+   }]);
+   if ( modelTemplates.model === undefined) return ;      
+   config.modelTemplates = modelTemplates.model;
+  return config;
+}
+
+export async function createConfigurationFile(taskName?: string) {
+  const baseConfig = { backlogColumn: context.backlogColumn, model: context.model, modelTemplates: context.modelTemplates ,gitServices: context.gitServices, projectServices: context.projectServices, projectId: context.projectId, listFilter: context.listFilter, listTemplate: context.listTemplate  };
+  let config = taskName ? await getTaskConfig(baseConfig): await getBaseConfig(baseConfig);
+  if ( !config ) return false;
+  storeConfig(config);
 
   return true;
 }
@@ -220,7 +227,7 @@ export function getConfig(variable:string, defaultValue: AnyValue) {
   }
   return defaultValue;
 }
-export function storeConfig(variable:string, value: AnyValue) {
+export function storeConfig(record:Record<string, AnyValue>) {
   let config: ObjectRecord= {};
   if ( fs.existsSync(CONFIG_FILE) ) {
     const content = fs.readFileSync(CONFIG_FILE, "utf8");
@@ -230,10 +237,17 @@ export function storeConfig(variable:string, value: AnyValue) {
       throw new Error(`Verifique que el ${CONFIG_FILE} sea json valido`  );
     }
   }
-  config[variable] = value;
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
-
+  for(const [variable, value] of Object.entries(record)) {
+    config[variable] = value;
+  } 
+  try {
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) );
+  } catch {
+    throw new Error(`No se pudo guardar la configuracion en ${CONFIG_FILE}`  );
+  }
+  
 }
+
 export function sortByName(objA: {Name: string}, objB: {Name: string}) {
   return objA.Name > objB.Name ? 1 : objA.Name < objB.Name ? -1 : 0;
 }
