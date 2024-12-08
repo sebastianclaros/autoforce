@@ -28,9 +28,12 @@
     criteria?: ICriteria;
     type: string;
   }
-type Step = IStepTask | IStepFunction | IStepCommand;
+type Step = IStepSubTask | IStepTask | IStepFunction | IStepCommand;
 
 interface IStepTask extends IStep {
+  task: string;  
+}
+interface IStepSubTask extends IStep {
   subtask: string;  
 }
 interface IStepFunction extends IStep {

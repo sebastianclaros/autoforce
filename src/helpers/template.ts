@@ -38,7 +38,7 @@ class TemplateEngine{
   _extension: string;
   _sourceFolder: string;
 
-  constructor (source: string, extension: string) {
+  constructor (source: string, extension: string = '*') {
     this._sourceFolder = source;
     if (!fs.existsSync(this._sourceFolder)) {
       throw new Error(`La carpeta source ${this._sourceFolder} no existe!`);
@@ -47,7 +47,7 @@ class TemplateEngine{
   };
   
   getTemplates() {
-    const filterThisExtension = (file: string): boolean => file.endsWith(`.${this._extension}`);
+    const filterThisExtension = (file: string): boolean => file.endsWith(`.${this._extension}`) || this._extension === '*';
 
     const templates = [];
     const files = getFiles(this._sourceFolder, filterThisExtension , true, ['dictionary']);
@@ -58,8 +58,26 @@ class TemplateEngine{
     }
     return templates;
   }
+
+  getNameAndExtension(templateName:string) {
+    // Si viene la extension en el nombre la extrae
+    if ( templateName.split(".").length > 1 ) {
+      return templateName.split(".");    
+    }
+    // Si viene la extension * busca cual puede ser en el directorio
+    if ( this._extension === '*' || this._extension === '' ) {
+      const fileNames = getFiles(this._sourceFolder, fileName=> fileName.split(".")[0].endsWith(templateName)); 
+      if ( fileNames.length > 0 ) {
+        return fileNames[0].split(".");          
+      }
+    }
+    // Por defecto usa el templateName como nombre y la extension
+    return [templateName, this._extension];
+  }
   read (templateName: string) {
-    const rawTemplate = openTemplate(this._sourceFolder, templateName, this._extension);
+    // Por defecto usa el templateName como nombre y la extension
+    const [name, extension]  = this.getNameAndExtension(templateName);
+    const rawTemplate = openTemplate(this._sourceFolder, name, extension);
     this._template = Handlebars.compile(rawTemplate);
   }
 

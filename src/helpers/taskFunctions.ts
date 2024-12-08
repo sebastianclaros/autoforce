@@ -443,12 +443,13 @@ export const taskFunctions: { [s: string]: AnyValue } = {
   
     async listIssues(listFilter?:string, listTemplate?:string): Promise<boolean>  {
         let filter: string = '{states: OPEN}';
-        if (!listFilter) {
-            listFilter = listFilter || context.options.filter || context.listFilter; 
+        const extension = '*'; 
+        if (!listFilter) {            
+            listFilter = context.options.filter || context.listFilter; 
         }
         if (!listTemplate) {
             listTemplate = context.options.template || context.listTemplate ;
-        }
+        }         
 
         if ( !context.projectApi || !context.gitApi){
             return false;
@@ -467,7 +468,11 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         }
         if ( listFilter === ListFilters.PorMilestone ) {    
             if ( context.options.milestone ) {
-                filter = `{ milestone: "${context.options.milestone}"}`;
+                const milestoneFilter = (await context.gitApi.getMilestones()).filter( milestone => milestone.title == context.options.milestone );
+                if ( milestoneFilter.length === 0  ) {
+                    return false;
+                }
+                filter = `{ milestoneNumber: "${milestoneFilter[0].number}"}`;
             } else {
                 const choices: {value:number|string, title:string}[] = (await context.gitApi.getMilestones()).map( milestone => {  return {value: milestone.number, title: milestone.title }; } );
                 choices.push( { value: '', title: 'Issues sin Milestone'} );
@@ -481,7 +486,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
                         choices 
                     }
                 ]);
-                filter = `{ milestone: "${answer.filterValue}"}`;
+                filter = `{ milestoneNumber: "${answer.filterValue}"}`;
                 if ( answer.filterValue === undefined ) return false;
             }
         }
@@ -522,8 +527,8 @@ export const taskFunctions: { [s: string]: AnyValue } = {
             if ( listTemplate === undefined ) return false;
         }
         const result = await context.projectApi.getIssuesWithFilter(filter);
-        const rendered = generateTemplate( TEMPLATE_MODEL_FOLDER , 'bash', listTemplate, { issues: result, ...context});
-        
+        console.log(context.version);
+        const rendered = generateTemplate( TEMPLATE_MODEL_FOLDER , extension, listTemplate, { issues: result, context});        
         console.log( rendered);
         return true;
     },    

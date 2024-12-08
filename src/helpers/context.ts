@@ -107,6 +107,14 @@ class Context implements IObjectRecord {
         const filters: Choice[] = [{  title: 'Solo mios abiertos',  value: ListFilters.Mios,  description: 'Busca los issues donde este asignado y esten en state Open'},{  title: 'Por Milestone',  value: ListFilters.PorMilestone,  description: 'Busca los issues de un deterinado milestone'},{  title: 'Por Label',  value: ListFilters.PorLabel, description: 'Busca los issues de un deterinado label'}];
         return filters;
     }
+    async milestoneNumbers() {
+        const choices: Choice[] = [{value: '', title: 'Ninguno' }];
+        const milestones = await this.gitApi?.getMilestones();
+        if (milestones) {
+            milestones.forEach( milestone => choices.push( {value: milestone.number, title: milestone.title }) );
+        }
+        return choices;
+    }
     async milestones() {
         const choices: Choice[] = [{value: '', title: 'Ninguno' }];
         const milestones = await this.gitApi?.getMilestones();

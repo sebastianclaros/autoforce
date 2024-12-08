@@ -4,7 +4,7 @@ import fs from "fs";
 import { getFiles, filterJson, searchInFolderHierarchy } from "./util.js";
 import { validateCommand, validateFunction, executeFunction, executeCommand, taskFunctions } from "./taskFunctions.js";
 import prompts from "prompts";
-import { ICriteria, IStep, IStepCommand, IStepFunction, IStepTask, ITask, Step } from "../types/helpers/tasks.js";
+import { ICriteria, IStep, IStepCommand, IStepFunction, IStepSubTask, IStepTask, ITask, Step } from "../types/helpers/tasks.js";
 import { AnyValue, CommandOptions, ObjectRecord } from "../types/auto.js";
 import { fileURLToPath } from 'url';
 const COMMAND_FOLDER = searchInFolderHierarchy('commands', fileURLToPath(import.meta.url));
@@ -87,8 +87,11 @@ export function validateTask(task: ITask) {
       validateStep = validateCommand( step as IStepCommand);      
     } else if ( typeof (step as IStepFunction).function === 'string' ) {
       validateStep = validateFunction(step as IStepFunction);
-    } else if ( typeof (step as IStepTask).subtask === 'string') {
-      const subtask = getTask( (step as IStepTask).subtask, SUBTASKS_FOLDER);
+    } else if ( typeof (step as IStepSubTask).subtask === 'string' ) {
+      const subtask = getTask( (step as IStepSubTask).subtask, SUBTASKS_FOLDER);
+      validateStep = validateTask(subtask);
+    } else if ( typeof (step as IStepTask).task === 'string' ) {
+      const subtask = getTask( (step as IStepTask).task, TASKS_FOLDER);
       validateStep = validateTask(subtask);
     } else {
       console.log('Step no tiene command ni function ni subtask');
@@ -143,9 +146,9 @@ function previewStep(step: Step, tabs = '') {
     logStep(`Si ${step.criteria.field} ${step.criteria.operator || '=='} ${step.criteria.value}`, tabs );
     tabs += '\t';
   }
-  if ( (step as IStepTask).subtask ) {
+  if ( (step as IStepSubTask).subtask ) {
     tabs += '\t';
-    const subtask = getTask( (step as IStepTask).subtask, SUBTASKS_FOLDER);
+    const subtask = getTask( (step as IStepSubTask).subtask, SUBTASKS_FOLDER);
     previewTask(subtask, tabs);
   } else {
     logStep(`${step.name}`, tabs );
@@ -168,8 +171,8 @@ async function runStep(step: Step, tabs: string) {
     return executeCommand(step as IStepCommand);
   } else if ( typeof (step as IStepFunction).function === 'string' ) {
     return await executeFunction(step as IStepFunction);
-  } else if ( typeof (step as IStepTask).subtask === 'string') {
-    const subtask = getTask((step as IStepTask).subtask, SUBTASKS_FOLDER);    
+  } else if ( typeof (step as IStepSubTask).subtask === 'string' || typeof (step as IStepTask).task === 'string') {    
+    const subtask =  typeof (step as IStepSubTask).subtask === 'string' ? getTask((step as IStepSubTask).subtask, SUBTASKS_FOLDER) : getTask((step as IStepTask).task, TASKS_FOLDER);    
     let stepContext = step.arguments ? context.mergeArgs(step.arguments): {};
     if ( Array.isArray(stepContext) ) {
       stepContext = createObject( subtask.arguments, stepContext);    

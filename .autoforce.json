@@ -1,4 +1,5 @@
 {
+  "version": "0.1.12",
   "backlogColumn": "Todo",
   "model": "modelC",
   "modelTemplates": "modelB",

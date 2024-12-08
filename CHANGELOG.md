@@ -1,4 +1,24 @@
 # Versiones
+## Version 0.1.12
+- Fecha: 8/12/2024
+- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.12)
+- Cambios:
+    * [Publish] ponga en Changelog todos los issues Closed del milestone asociado. Y los mueva al final de todo  a la Columna &quot;Published&quot;
+        - https://github.com/sebastianclaros/autoforce/issues/11
+    * [List] Poner Filtros: Abiertos Mios, Por Label, Por Milestone
+        - https://github.com/sebastianclaros/autoforce/issues/17
+    * [List] Guardar en autoforce el list default list template y default list Filter
+        - https://github.com/sebastianclaros/autoforce/issues/18
+    * [new Issue] Agregar Milestone
+        - https://github.com/sebastianclaros/autoforce/issues/19
+    * [config] dividir config general en config por comandos
+        - https://github.com/sebastianclaros/autoforce/issues/27
+    * [list] que tome de los argumentos valores.
+        - https://github.com/sebastianclaros/autoforce/issues/28
+    * [list] que reciba argumentos en taskFunctions y que tome orden de precedencia parametros de funcion, argumentos de comando y por ultimo autoforce.json
+        - https://github.com/sebastianclaros/autoforce/issues/29
+    * [new] que el milestone sea opcional
+        - https://github.com/sebastianclaros/autoforce/issues/30
 
 ## Version 0.1.11
 - Fecha: 29/11/2024
