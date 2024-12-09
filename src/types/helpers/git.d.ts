@@ -37,7 +37,7 @@ interface IProjectApi {
     getIssuesWithFilter(filter?: string): Promise<IIssueObject[]>;
     getIssue(issueNumber: string): Promise<IIssueObject>;
     assignIssueToMe: (issueNumber: string)=> Promise<boolean>;    
-    createIssue: (title, state?: string, label?: string, body?: string, milestone?: string) => Promise<number>;
+    createIssue: (title, state?: string, label?: string, body?: string, milestone?: string) => Promise<IIssueObject>;
     // getColumnValueMap: ()
     // getIssueState: (issueNumber: number){
     // getIssue: (issueNumber: number){

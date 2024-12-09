@@ -37,7 +37,7 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
     return mapValues;
   }
 
-  async createIssue(title: string, state?: string, label?: string, body?: string, milestoneId?: string ) {
+  async createIssue(title: string, state?: string, label?: string, body?: string, milestoneId?: string ) : Promise<IIssueObject> {
     const user = await this.getUser();
     const repository = await this.getRepository(label);
     const repositoryId = repository.id;
@@ -58,6 +58,12 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
           issue {
             id
             number
+            url
+            milestone {
+              title
+              dueOn
+              url
+            }
           }
         }
       }`;
@@ -65,7 +71,7 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
     const issue = createIssue.issue;
     
     if ( !state || !issue.number) {
-      return issue.number;
+      return issue;
     }
     const mutationItem = `
       mutation addProjectV2ItemById($projectId: ID!, $contentId: ID! ) {
@@ -105,7 +111,7 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
       }`;
       await this.graphqlAuth(mutationColumn, { projectId, itemId, fieldId, columnValue });
     }
-    return issue.number;  
+    return issue;  
   }
   async getIssueState(issueNumber: string){
     const issue = await this._getIssue(issueNumber);

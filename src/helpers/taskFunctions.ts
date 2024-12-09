@@ -337,9 +337,14 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         if ( context.projectApi === undefined ) {
             return false;
         }
-        const issueNumber = await context.projectApi.createIssue(title, context.backlogColumn, label, body, milestone );
-        if ( issueNumber) {
-            console.log(`Se creo el issue ${issueNumber}`);
+        console.log(milestone);
+        const issue = await context.projectApi.createIssue(title, context.backlogColumn, label, body, milestone );
+        if ( issue) {
+            console.log(`Se creo el issue ${issue.number}`);
+            console.log(`${issue.url}`);
+            // if ( issue.milestone) {
+            //     console.log(`Milestone ${issue.milestone.title} expira en ${issue.milestone.dueOn} `);
+            // }
             return true;
         }
         return false;

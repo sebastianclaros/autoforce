@@ -36,7 +36,7 @@ export class GitLabApi implements IGitApi, IProjectApi {
 
     async createIssue(title: string, state?: string, label?: string, body?: string, milestone?: string ) {
       console.log(title, state, label, body, milestone);
-      return 1 ;  
+      return { number:1} ;  
     }
   
     async  moveIssue(issueNumber: string, state: string): Promise<boolean> {
