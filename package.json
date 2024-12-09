@@ -2,7 +2,7 @@
   "name": "autoforce",
   "homepage": "https://sebastianclaros.github.io/autoforce",
   "private": false,
-  "version": "0.1.13",
+  "version": "0.1.14",
   "keywords": [
     "Salesforce",
     "Automation",
@@ -54,7 +54,6 @@
   "dependencies": {
     "@types/jsforce": "^1.11.5",
     "@types/prompts": "^2.4.9",
-    "autoforce": "file:./autoforce.tgz",
     "graphql": "^16.9.0",
     "graphql-request": "^7.1.0",
     "gray-matter": "^4.0.3",
