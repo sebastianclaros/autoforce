@@ -1,25 +1,39 @@
 # Autoforce
 
-El proyecto esta en Beta todavia, recien fue migrado a Typescript y paso de ser unos scripts aislados a un modulo que se puede instalar y ejecutar directamente tipo CLI.
+El proyecto esta todavia en Beta todavia, pero la idea es que pueda estar productivo para algunos proyectos pronto.
 
 
 ## Objetivo
 
-La motivacion de crear la herramienta fue facilitar y automatizar las tareas comunes que realizamos los desarrolladores, especialmente los que utilizamos Salesforce.
+Hace un tiempo estabamos armando un repo para hacer practicas sobre Salesforce. Y empezamos a crear unos scripts para crear una instancia y subir el codigo. La idea fue evolucionando, y los scripts se fueron complejizando. Tambien surgieron limitaciones, si algo fallaba se quedaba por la mitad, los que tenian windows algunas cosas no funcionaban, y termine moviendo la idea a una herramienta.
 
-Me vi en la necesidad de tener una herramienta porque muchas veces me ganaba la ansiedad y queria hacer varios cambios juntos. Sentia que hacer varios stories, cada una con su branch, y todo el proceso era perder mucho tiempo. Pero cuando uno logra automatizar el repositorio queda mas prolijo y la trazabilidad tambien, y permite que otros desarrolladores puedan colaborar de forma mas simple.
+El objetivo termino siendo facilitar y automatizar las tareas comunes que realizamos los desarrolladores. Si bien empece con Salesforce, la idea es generalizarla para que soporte distintos modelos, de hecho uno es para este mismo proyecto :)
 
-En general cuando desarrollamos, repetimos mas o menos las mismas tareas. Arrancamos a desarrollar algo nuevo (start), terminamos ese desarrollo(finish), o bien dejarlo a un costado (stop), y posiblemente lo descartamos por completo (cancel). Dependiendo la tecnologia, el tipo de desarrollo, y que estrategia de branching, entre otras cosas mas, estas tareas podrian ser distintas.
+## Orden en un Repositorio
 
-En este repo las tareas buscan automatizar o integrar el siguiente tipo gestiones:
+Soy muy ansioso, y muchas veces queria hacer varios cambios juntos, el famoso ya que estoy aca tocando, o se me ocurrio algo. Pero despues es dificil de seguir, o se hacen mas largas las code reviews, etc.
 
+Asi que el primer objetivo fue organizar el proyecto, si tengo una idea la guardo enseguida (new). Y si quiero arrancar algo, puedo empezar por ver las proximas stories (list). 
+
+
+## Tareas repetitivas
+
+El segundo objetivo fue que pueda arrancar el desarrollo y arme el entorno, cree una branch y suba datos de prueba (start). Y por otro lado, cuando termine ese desarrollo,que baje los cambios en la scratch, documente, y valide la calidad del codigo(finish).
+
+Basicamente las tareas comunes que identificamos fueron:
+1. start
+2. finish
+3. stop
+4. cancel
+
+
+En cada una de ellas buscamos automatizar o integrar las siguientes gestiones:
 - Branching Strategy en Git (Github o Gitlab)
 - Armado de ambiente de desarrollo (Salesforce)
 - Gestion de proyecto (Github projects, Gitlab projects o Jira).
 - Documentacion (Github pages o GitLab pages. Version mejorada con docusaurus)
 - Calidad de codigo (PMD)
 - Uso de IA ( OpenAI, )
-
 
 ## Roadmap Status
 
