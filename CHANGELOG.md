@@ -1,6 +1,21 @@
 # Versiones
+
+## Version 0.1.15
+- Fecha: 9 Dic 2024
+- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.15)
+- Cambios:
+    * [new] que muestre la url
+        - https://github.com/sebastianclaros/autoforce/issues/37
+    * [list] falta templates en modelA
+        - https://github.com/sebastianclaros/autoforce/issues/38
+
+## Version 0.1.13 y 0.1.14 
+- Fecha: 9 Dic 2024
+- Cambios:
+    * Error en el publish por una dependencia erronea a si mismo
+     
 ## Version 0.1.12
-- Fecha: 8/12/2024
+- Fecha: 8 Dic 2024
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.12)
 - Cambios:
     * [Publish] ponga en Changelog todos los issues Closed del milestone asociado. Y los mueva al final de todo  a la Columna &quot;Published&quot;

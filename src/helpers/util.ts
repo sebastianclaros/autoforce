@@ -31,7 +31,10 @@ export function titlesToChoices( list: string[], titleToValue=(title:string)=>ti
 export function getDataFromPackage() {
   const data :Record<string,string> = {};
   try {
-    const filename =  process.cwd() +  "/package.json";
+    const filename = searchInFolderHierarchy( "package.json", process.cwd() ); 
+    if ( !filename ) {
+      throw new Error("No se encontro el package.json en " + process.cwd());
+    }
     const content = fs.readFileSync(filename, "utf8");
     const packageJson = JSON.parse(content);
     if ( packageJson.repository ) {
@@ -213,9 +216,10 @@ export async function createConfigurationFile(taskName?: string) {
 
   return true;
 }
-export function getConfig(variable:string, defaultValue: AnyValue) {
-  if ( fs.existsSync(CONFIG_FILE) ) {
-    const content = fs.readFileSync(CONFIG_FILE, "utf8");
+
+export function getConfigFile( file: string, variable:string, defaultValue: AnyValue) {
+  if ( fs.existsSync(file) ) {
+    const content = fs.readFileSync(file, "utf8");
     try {
       const config = JSON.parse(content);
       if ( config[variable] ) {
@@ -226,6 +230,10 @@ export function getConfig(variable:string, defaultValue: AnyValue) {
     }
   }
   return defaultValue;
+}
+
+export function getConfig(variable:string, defaultValue: AnyValue) {
+  return getConfigFile(CONFIG_FILE, variable, defaultValue);
 }
 export function storeConfig(record:Record<string, AnyValue>) {
   let config: ObjectRecord= {};

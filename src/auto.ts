@@ -4,8 +4,10 @@ import { ITask } from "./types/helpers/tasks.js";
 import { logError} from "./helpers/color.js";
 import prompts from "prompts";
 import type { CommandFunction, CommandTaskFunction,  ConfigArguments } from "./types/auto.js";
-import { createConfigurationFile } from "./helpers/util.js";
+import { createConfigurationFile, getConfigFile, searchInFolderHierarchy } from "./helpers/util.js";
 import context from "./helpers/context.js";
+import { fileURLToPath } from "url";
+import { dirname } from 'path';
 
 const proxyCommand: Record<string, CommandFunction> = {
     'version': showVersion, 
@@ -19,7 +21,9 @@ const taskCommand: Record<string, CommandTaskFunction> = {
 }
 
 async function  showVersion() {
-    console.log('AutoForce v0.1.12');
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const version = getConfigFile( __dirname  + '/../.autoforce.json', 'version', '0.1.14' );
+    console.log('AutoForce v' + version);
     return true;
 }
 
