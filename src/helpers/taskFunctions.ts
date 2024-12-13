@@ -399,7 +399,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
     },
     
     async validaNoseaBranchActual(newBranchName: string): Promise<boolean> {
-        return this.getBranchName() !== newBranchName;
+        return getBranchName() !== newBranchName;
     },
 
     
@@ -417,7 +417,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         try {
             const newBranchName = context.newBranchName;
             executeShell( `git checkout -b ${newBranchName} origin/main` ) ;
-            context.set('branchName', this.getBranchName() );
+            context.set('branchName', getBranchName() );
             return true ;
         } catch (error) {
             console.log(error);

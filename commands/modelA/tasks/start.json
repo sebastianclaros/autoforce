@@ -7,9 +7,9 @@
     {
       "name": "validate issue",
       "function": "validateIssue",
-      "arguments": ["${newIssueNumber}", "Ready,Backlog"],
-      "description": "Valida que Issue este en la Columna Ready o Backlog",
-      "errorMessage": "Por favor verifique que el issue ${newIssueNumber} este en la columna Ready o Backlog"
+      "arguments": ["${newIssueNumber}", "Todo"],
+      "description": "Valida que Issue este en la Columna Todo",
+      "errorMessage": "Por favor verifique que el issue ${newIssueNumber} este en la columna Todo"
     },
     {
       "name": "check Issue type based on Labels",
