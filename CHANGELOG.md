@@ -1,5 +1,16 @@
 # Versiones
 
+## Version 0.1.16
+- Fecha: 
+- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.16)
+- Cambios:
+    * [new] new milestone 
+        - https://github.com/sebastianclaros/autoforce/issues/34
+    * Pincha en subdirectorios buscando el package.json
+        - https://github.com/sebastianclaros/autoforce/issues/39
+    * Comando new Label
+        - https://github.com/sebastianclaros/autoforce/issues/43
+
 ## Version 0.1.15
 - Fecha: 9 Dic 2024
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.15)
