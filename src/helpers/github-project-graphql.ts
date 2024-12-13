@@ -37,12 +37,27 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
     return mapValues;
   }
 
+  async findLabelByName( name: string | undefined ): Promise<ILabel|undefined> {
+    if ( name ) {
+      const labels  = await this.getLabels();
+      if ( labels.length > 0 ) {
+        for( const label of labels ) {
+          if (label.name === name ) {
+            return label;
+          }
+        }
+      }
+    }
+    return;
+  }
+
   async createIssue(title: string, state?: string, label?: string, body?: string, milestoneId?: string ) : Promise<IIssueObject> {
     const user = await this.getUser();
-    const repository = await this.getRepository(label);
+    const repository = await this.getRepository();
     const repositoryId = repository.id;
-    const labelId = repository.label?.id;
+    const labelId = label?.startsWith('LA_') ? label :  (await this.findLabelByName( label))?.id ;
     const projectId = repository.projectV2.id;
+    const variables = { labelId,  body, assignId: user.id,  projectId, repositoryId, title,  milestoneId: milestoneId?  milestoneId: null};
     const mutationIssue = `
       mutation createIssue($repositoryId: ID!, $assignId: ID!, $title: String!, $body: String, $milestoneId: ID ${ labelId ? ', $labelId: ID!': ''}  ) {
         createIssue(
@@ -67,7 +82,7 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
           }
         }
       }`;
-    const { createIssue }: {createIssue: { issue: { id: string, number: number } }} = await this.graphqlAuth(mutationIssue, { labelId,  body, assignId: user.id,  projectId, repositoryId, title,  milestoneId: milestoneId?  milestoneId: null  , label: label?  [label]: null });
+    const { createIssue }: {createIssue: { issue: IIssueObject }} = await this.graphqlAuth(mutationIssue, variables);
     const issue = createIssue.issue;
     
     if ( !state || !issue.number) {

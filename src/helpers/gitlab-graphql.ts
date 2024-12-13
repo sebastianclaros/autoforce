@@ -34,6 +34,15 @@ export class GitLabApi implements IGitApi, IProjectApi {
       return [];
     }
 
+    async createLabel(name: string, color: string = 'random' ) {
+      console.log(name, color) ;  
+      return {id: '', name, color};
+    }
+    async createMilestone(title: string, state = 'open', description?: string, dueOn?: string ) {
+      console.log(title, state, description, dueOn) ;  
+      return { id: '', title: '', state: '', url: '' };
+    }
+
     async createIssue(title: string, state?: string, label?: string, body?: string, milestone?: string ) {
       console.log(title, state, label, body, milestone);
       return { number:1} ;  

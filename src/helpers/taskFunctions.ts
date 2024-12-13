@@ -334,10 +334,41 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         return false;
     },
     async createIssue(title: string, label: string, body?: string,  milestone?: string): Promise<boolean> {
-        if ( context.projectApi === undefined ) {
+        if ( context.projectApi === undefined || context.gitApi === undefined) {
             return false;
         }
-        console.log(milestone);
+        if ( label === 'new') {
+            const answer = await prompts([
+                {
+                    message: 'Nombre del Label',
+                    name: 'nombre',
+                    type: 'text'
+                }
+            ]);
+            if ( answer.nombre !== undefined ) {
+                const result = await context.gitApi.createLabel(answer.nombre);
+                if( result?.id ){
+                    label = result.id ;
+                }
+            } else {
+                label = '';
+            }
+        }
+        if ( milestone === 'new') {
+            const answer = await prompts([
+                {
+                    message: 'Nombre del Milestone',
+                    name: 'nombre',
+                    type: 'text'
+                }
+            ]);            
+            if ( answer.nombre !== undefined ) {
+                const result = await context.gitApi.createMilestone(answer.nombre);
+                milestone = result?.id;
+            } else {
+                milestone = '';
+            }
+        }
         const issue = await context.projectApi.createIssue(title, context.backlogColumn, label, body, milestone );
         if ( issue) {
             console.log(`Se creo el issue ${issue.number}`);
@@ -479,7 +510,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
                 }
                 filter = `{ milestoneNumber: "${milestoneFilter[0].number}"}`;
             } else {
-                const choices: {value:number|string, title:string}[] = (await context.gitApi.getMilestones()).map( milestone => {  return {value: milestone.number, title: milestone.title }; } );
+                const choices: {value?: number|string, title:string}[] = (await context.gitApi.getMilestones()).map( milestone => {  return {value: milestone.number, title: milestone.title }; } );
                 choices.push( { value: '', title: 'Issues sin Milestone'} );
                 choices.push( { value: '*', title: 'Issues con Milestone'} );
                 const answer = await prompts([

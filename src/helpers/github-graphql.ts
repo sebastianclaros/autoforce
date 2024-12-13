@@ -1,10 +1,27 @@
 import { graphql } from "@octokit/graphql";
+import { Octokit } from "octokit";
+import { AnyValue } from "../types/auto.js";
+
 
 export class GitHubApi implements IGitApi {
   repoVar;
   projectNumber; 
   graphqlAuth;
+  octokit;
+  _repository: IRepository | undefined;
+  _labels: ILabel[] | undefined;
+  _defaultColors: Record<string, string> = { 'red': 'b60205','orange': 'd93f0b','yellow': 'fbca04','green': '0e8a16','dupont': '006b75','light-blue': '1d76db','blue': '0052cc','purple': '5319e7','pastel-red': 'e99695','pastel-orange': 'f9d0c4','pastel-yellow': 'fef2c0','pastel-green': 'c2e0c6','pastel-dupont': 'bfdadc','pastel-light': 'c5def5','pastel-blue': 'bfd4f2','pastel-purple': 'd4c5f9' };
+ 
+  async getRepository() { 
+    if ( this._repository === undefined) {
+      const repository = await this.getRepositoryObject();
+      this._repository = repository;
+    }
+    return this._repository; 
+  }
+
   
+
   constructor(token: string, owner: string, repo: string, projectNumber?: number) {
     this.repoVar = { owner, repo };
     this.projectNumber = projectNumber;
@@ -14,8 +31,63 @@ export class GitHubApi implements IGitApi {
         "X-Github-Next-Global-ID": 1
       },
     })
+    this.octokit = new Octokit({
+      auth: token
+    })
+  }
+  async createLabel(name: string, color: string = 'random') : Promise<ILabel|undefined>{
+    const repositoryId = (await this.getRepository()).id;
+    if ( color === 'random') {
+      color = this.getRandomColor();
+    } else if ( this._defaultColors[color] !== undefined) {
+      color = this._defaultColors[color];
+    }
+    const variables: Record<string,string> = { name, repositoryId , color };
+    const mutationCreateLabel = `
+      mutation createLabel( $name: String!, $repositoryId: ID!, $color: String! ) {
+        createLabel(
+            input: {
+              repositoryId: $repositoryId,
+              name: $name
+              color: $color
+            }
+        ) {
+          label {
+            id
+            name
+            color
+          }
+        }
+      }`;
+    try {
+      const {createLabel}: { createLabel: { label: ILabel } } = await this.graphqlAuth(mutationCreateLabel, variables);
+      return createLabel.label;
+    } catch (error) {
+      console.log(error);
+    }
+    return ;
+    
   }
 
+  getRandomColor(): string {
+    const colors = Object.values(this._defaultColors);
+    const number = Math.floor(Math.random() * colors.length);
+    return colors[number];
+  }
+
+  async createMilestone(title: string, state = 'open', description?: string, dueOn?: string) {
+    const result = await this.octokit.request(`POST /repos/${this.repoVar.owner}/${this.repoVar.repo}/milestones`, {
+      title,
+      state,
+      description,
+      due_on: dueOn,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+    const milestone = { id: result.data.node_id, title: result.data.title, description: result.data.description, dueOn: result.data.due_on , url: result.data.url };
+    return milestone;
+  }
   async  getUser() {    
     const query = `{
       viewer {
@@ -26,23 +98,27 @@ export class GitHubApi implements IGitApi {
     const {viewer }: {viewer: { login: string, id: number}} = await this.graphqlAuth(query);
     return viewer;
   }
-  async  getLabels() : Promise<ILabel[]>{
-    const query = `
-        query getRepo($owner:String!, $repo: String! ) {
-          repository(owner: $owner, name: $repo) {
-            labels(last: 10, orderBy:  { field: CREATED_AT, direction: DESC}) {
-              nodes{
-                id
-                name
-                color
+
+  async getLabels() : Promise<ILabel[]>{
+    if ( this._labels === undefined ) {
+      const query = `
+          query getRepo($owner:String!, $repo: String! ) {
+            repository(owner: $owner, name: $repo) {
+              labels(last: 10, orderBy:  { field: CREATED_AT, direction: DESC}) {
+                nodes{
+                  id
+                  name
+                  color
+                }
               }
             }
           }
-        }
-    `; 
-    const { repository }: {repository: { labels: { nodes: { id: string, name: string , color: string }[] } } } = await this.graphqlAuth(query, this.repoVar );
-    
-    return repository.labels.nodes;    
+      `; 
+      const { repository }: {repository: { labels: { nodes: { id: string, name: string , color: string }[] } } } = await this.graphqlAuth(query, this.repoVar );
+      this._labels = repository.labels.nodes;
+    }
+
+    return this._labels;    
   }
 
   async  getMilestones(): Promise<IMilestone[]>{
@@ -65,16 +141,11 @@ export class GitHubApi implements IGitApi {
   }
 
 
-  async  getRepository(label?: string) {
+  async  getRepositoryObject() {
     const query = `
-        query getRepo($owner:String!, $repo: String!, $projectNumber: Int!, ${label ?  '$label: String!': ''} ) {
+        query getRepo($owner:String!, $repo: String!, $projectNumber: Int! ) {
           repository(owner: $owner, name: $repo) {
             id
-            ${ label ? 
-              `label(name: $label) {
-                id
-              }` :''
-            }
             projectV2( number: $projectNumber ) {
               id
               field(name: "Status") {
@@ -91,13 +162,12 @@ export class GitHubApi implements IGitApi {
           }
         }
     `; 
-    const { repository }: {repository: { id: string, label?: { id: string}, projectV2: { id: string, field: { id: string, name: string, options: { name: string, id: string}[] }}}} = await this.graphqlAuth(query, { label, projectNumber: this.projectNumber,...this.repoVar});
+    const { repository }: {repository: IRepository} = await this.graphqlAuth(query, { projectNumber: this.projectNumber,...this.repoVar});
     return repository;
   }
 
   async createPullRequest(branchName: string, title: string, body: string): Promise<boolean> {
-    const repository = await this.getRepository();
-    const repositoryId = repository.id;
+    const repositoryId = (await this.getRepository()).id;
     const headRefName = 'main';
     const baseRefName = branchName;
 

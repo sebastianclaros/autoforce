@@ -95,7 +95,7 @@ class Context implements IObjectRecord {
         
     }
     async labels() {
-        const choices: Choice[]= [{value: '', title: 'Ninguno' }];
+        const choices: Choice[]= [{value: '', title: 'Ninguno' }, {value: 'new', title: 'Nuevo' }];
         const labels = await this.gitApi?.getLabels();
         if (labels) {
             labels.forEach( label => choices.push( {value: label.name, title: label.name }) );
@@ -116,7 +116,7 @@ class Context implements IObjectRecord {
         return choices;
     }
     async milestones() {
-        const choices: Choice[] = [{value: '', title: 'Ninguno' }];
+        const choices: Choice[] = [{value: '', title: 'Ninguno' }, {value: 'new', title: 'Nuevo' }];
         const milestones = await this.gitApi?.getMilestones();
         if (milestones) {
             milestones.forEach( milestone => choices.push( {value: milestone.id, title: milestone.title }) );

@@ -1,15 +1,31 @@
 
 interface IMilestone {
     id?: string;
-    number: number;
+    number?: number;
     title: string;
+    state?: string;
     dueOn?: string;
+    url?: string;
 }
 interface ILabel {
     id?: string;
     name: string;
     color?: string;
 }
+interface IRepository {
+    id: string;
+    label?: ILabel, 
+    projectV2: { 
+        id: string, 
+        field: { 
+            id: string, 
+            name: string, 
+            options: { name: string, id: string}[] 
+        }
+    }
+}
+
+
 interface IIssueObject {
     id?: string;
     number?: number;
@@ -22,13 +38,15 @@ interface IIssueObject {
     body?: string;
 }
 interface IGitApi {
-//    getUser: () => Promise<IGitUser>;
-//    getRepository: () => Promise<IGitRepository>;
+    //    getUser: () => Promise<IGitUser>;
+    //    getRepository: () => Promise<IGitRepository>;
     createPullRequest: (branchName: string, title: string, body: string) => Promise<boolean>;
-//    getCommit: (commitSha: string) => Promise<ICommit>;
+    //    getCommit: (commitSha: string) => Promise<ICommit>;
     assignBranchToIssue: (issueNumber: string, branchName: string, commitSha: string) => Promise<boolean>;
     getLabels(): Promise<ILabel[]>;
     getMilestones(): Promise<IMilestone[]>;
+    createLabel: (name: string, color: string = 'random') => Promise<ILabel|undefined>;
+    createMilestone: (title: string, state:string = 'open', description?: string, dueOn?: string) => Promise<IMilestone>;
 }
 
 interface IProjectApi {
