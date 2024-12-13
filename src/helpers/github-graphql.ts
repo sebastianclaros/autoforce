@@ -10,6 +10,7 @@ export class GitHubApi implements IGitApi {
   octokit;
   _repository: IRepository | undefined;
   _labels: ILabel[] | undefined;
+  _milestones: IMilestone[] | undefined;
   _defaultColors: Record<string, string> = { 'red': 'b60205','orange': 'd93f0b','yellow': 'fbca04','green': '0e8a16','dupont': '006b75','light-blue': '1d76db','blue': '0052cc','purple': '5319e7','pastel-red': 'e99695','pastel-orange': 'f9d0c4','pastel-yellow': 'fef2c0','pastel-green': 'c2e0c6','pastel-dupont': 'bfdadc','pastel-light': 'c5def5','pastel-blue': 'bfd4f2','pastel-purple': 'd4c5f9' };
  
   async getRepository() { 
@@ -122,7 +123,8 @@ export class GitHubApi implements IGitApi {
   }
 
   async  getMilestones(): Promise<IMilestone[]>{
-    const query = `
+    if ( this._milestones === undefined ) {
+      const query = `
         query getRepo($owner:String!, $repo: String! ) {
           repository(owner: $owner, name: $repo) {
             milestones(last: 10, states: OPEN, orderBy: { field: CREATED_AT, direction: DESC} ) {
@@ -136,8 +138,10 @@ export class GitHubApi implements IGitApi {
           }
         }
     `; 
-    const { repository }: {repository: { milestones: { nodes: { id: string, number: number,  title: string , color: string }[] } } } = await this.graphqlAuth(query, this.repoVar );
-    return repository.milestones.nodes;
+      const { repository }: {repository: { milestones: { nodes: { id: string, number: number,  title: string , color: string }[] } } } = await this.graphqlAuth(query, this.repoVar );
+      this._milestones = repository.milestones.nodes;
+    }
+    return this._milestones;
   }
 
 

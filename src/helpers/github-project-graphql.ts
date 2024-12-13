@@ -36,6 +36,20 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
     }
     return mapValues;
   }
+  
+  async findMilestoneByName( title: string | undefined ): Promise<IMilestone|undefined> {
+    if ( title ) {
+      const milestones  = await this.getMilestones();
+      if ( milestones.length > 0 ) {
+        for( const milestone of milestones ) {
+          if (milestone.title === title ) {
+            return milestone;
+          }
+        }
+      }
+    }
+    return;
+  }
 
   async findLabelByName( name: string | undefined ): Promise<ILabel|undefined> {
     if ( name ) {
@@ -51,11 +65,12 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
     return;
   }
 
-  async createIssue(title: string, state?: string, label?: string, body?: string, milestoneId?: string ) : Promise<IIssueObject> {
+  async createIssue(title: string, state?: string, label?: string, body?: string, milestone?: string ) : Promise<IIssueObject> {
     const user = await this.getUser();
     const repository = await this.getRepository();
     const repositoryId = repository.id;
     const labelId = label?.startsWith('LA_') ? label :  (await this.findLabelByName( label))?.id ;
+    const milestoneId  = milestone?.startsWith('MI_') ? milestone :  (await this.findMilestoneByName( milestone))?.id ;
     const projectId = repository.projectV2.id;
     const variables = { labelId,  body, assignId: user.id,  projectId, repositoryId, title,  milestoneId: milestoneId?  milestoneId: null};
     const mutationIssue = `
