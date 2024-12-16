@@ -1,7 +1,16 @@
 # Versiones
 
+## Version 0.1.17
+- Fecha: 13 Dic 2024
+- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.17)
+- Cambios:
+    * [new] cuando se quiere crear un issue y se le manda  --milestone&#x3D;v0.1.17 manda el title y no el id
+        - https://github.com/sebastianclaros/autoforce/issues/44
+    * Poder ejecutar autoforce en un subdirectorio, hoy tira un config como que no encuentra el autoforce.json
+        - https://github.com/sebastianclaros/autoforce/issues/45
+
 ## Version 0.1.16
-- Fecha: 
+- Fecha: 12 Dic 2024
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.16)
 - Cambios:
     * [new] new milestone 
