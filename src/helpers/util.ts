@@ -6,7 +6,7 @@ import { logInfo, logWarning } from "./color.js";
 import { AnyValue, ObjectRecord } from "../types/auto.js";
 import { config } from "process";
 const COMMAND_FOLDER = searchInFolderHierarchy('commands', fileURLToPath(import.meta.url));
-export const CONFIG_FILE = searchInFolderHierarchy('.autoforce.json', fileURLToPath(import.meta.url));
+export const CONFIG_FILE = searchInFolderHierarchy('.autoforce.json', process.cwd());
 export const TEMPLATES_FOLDER = searchInFolderHierarchy('templates', fileURLToPath(import.meta.url));
 export const TEMPLATE_MODEL_FOLDER = TEMPLATES_FOLDER + '/' + getConfig('modelTemplates', 'modelA');
 export const DICTIONARY_FOLDER =  TEMPLATE_MODEL_FOLDER + "/diccionarios";
