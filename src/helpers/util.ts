@@ -77,11 +77,11 @@ export function findChoicesPosition( choices: Choice[], value: string) {
 
 export function getFilesInFolders(folders: string[], filter: (fullPath: string) => boolean, recursive = false, ignoreList: string[] = []): string[] {
   const files = new Set<string>();
-  for ( const folder in folders) {
+  for ( const folder of folders) {
     getFiles( folder, filter, recursive, ignoreList)
-      .forEach( files.add );
+      .forEach( file => files.add(file) );
   }
-  return [...files];
+  return Array.from(files);
 }
 
 

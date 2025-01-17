@@ -10,5 +10,6 @@
   "listTemplate": "openIssues",
   "devModel": "npm",
   "docModel": "processes",
-  "modelTemplates": "processes"
+  "filter": "{states: OPEN}",
+  "template": "openIssues"
 }
