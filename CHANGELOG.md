@@ -1,5 +1,13 @@
 # Versiones
 
+## Version 0.1.18
+- Fecha: 
+- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.18)
+- Cambios:
+    * Reorganizar los modelos para que sea mas por la configuracion misma
+        - https://github.com/sebastianclaros/autoforce/issues/46
+
+
 ## Version 0.1.17
 - Fecha: 13 Dic 2024
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.17)
