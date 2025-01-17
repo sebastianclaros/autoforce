@@ -1,25 +1,19 @@
 import context, { initializeContext } from "./context.js";
 import { logError, logStep } from "./color.js";
 import fs from "fs";
-import { getFiles, filterJson, searchInFolderHierarchy } from "./util.js";
+import { getModelFolders, getFiles, filterJson, searchInFolderHierarchy, readJsonSync } from "./util.js";
 import { validateCommand, validateFunction, executeFunction, executeCommand, taskFunctions } from "./taskFunctions.js";
 import prompts from "prompts";
 import { ICriteria, IStep, IStepCommand, IStepFunction, IStepSubTask, IStepTask, ITask, Step } from "../types/helpers/tasks.js";
 import { AnyValue, CommandOptions, ObjectRecord } from "../types/auto.js";
-import { fileURLToPath } from 'url';
-const COMMAND_FOLDER = searchInFolderHierarchy('commands', fileURLToPath(import.meta.url));
-export const TASKS_FOLDER =  `${COMMAND_FOLDER}/${context.model}/tasks`;
-export const SUBTASKS_FOLDER = `${COMMAND_FOLDER}/${context.model}/subtasks`;
-export const NEW_FOLDER = `${COMMAND_FOLDER}/${context.model}/new`;
 
-
-export function getTaskFolder(command: string) {
-  const folders: Record<string, string> = {
-    'task':  TASKS_FOLDER,
-    'subtask':  SUBTASKS_FOLDER,
-    'tasks':  TASKS_FOLDER,
-    'subtasks':  SUBTASKS_FOLDER,
-    'new':  NEW_FOLDER
+export function getTaskFolders(command: string = 'task') {  
+  const folders: Record<string, string[]> = {
+    'task':  getModelFolders('tasks'),
+    'subtask':  getModelFolders('subtasks'),
+    'tasks':  getModelFolders('tasks'),
+    'subtasks':  getModelFolders('subtasks'),
+    'new':  getModelFolders('new')
   }
   return folders[command.toLowerCase()] || folders.tasks;
 }
@@ -29,22 +23,36 @@ function getTaskLists(folder: string): string[] {
     return files.map( filename => filename.split(".")[0] );
 }
 
-export function getTasks(folder=TASKS_FOLDER): Record<string, ITask> {
+export function getTasks(command='tasks'): Record<string, ITask> {
+  const folders= getTaskFolders(command);
   const tasks: Record<string, ITask> = {};
-  for (const taskName of getTaskLists(folder)) {
-    tasks[taskName] = getTask(taskName, folder);
+  for ( const folder of folders) {    
+    for (const taskName of getTaskLists(folder)) {
+      const filename =  folder + "/" + taskName + ".json";
+      const task = readJsonSync<ITask>(filename);      
+      tasks[taskName] = tasks[taskName] ? mergeTask(tasks[taskName], task) : task;
+    }
   }
   return tasks;
 }
 
-function getTask(taskName: string, folder: string): ITask {
-    const filename =  folder + "/" + taskName + ".json";
-    const content = fs.readFileSync(filename, "utf8");
-    try {
-      return JSON.parse(content) as ITask;
-    } catch {
-      throw new Error(`Verifique que el ${filename} sea json valido`  );
-    }
+function mergeTask( newTask: ITask, oldTask: ITask): ITask {
+  const newSteps = newTask.steps ? [...newTask.steps, ...oldTask.steps] : oldTask.steps;
+  const newArguments = newTask.arguments ? {...newTask.arguments, ...oldTask.arguments} : oldTask.arguments;
+  const newGuards = newTask.guards ? [...newTask.guards, ...oldTask.guards] : oldTask.guards;
+  const newVerbose = newTask.verbose || oldTask.verbose;
+  const newDescription = newTask.description ? newTask.description + ' ' + oldTask.description : oldTask.description;
+  const mergedTask: ITask = { name: newTask.name, verbose: newVerbose, description: newDescription, arguments: newArguments, guards: newGuards, steps: newSteps }
+  return mergedTask;
+}
+
+
+function getTask(taskName: string, subfolder: string ): ITask {
+  const tasks = getTasks(subfolder);
+  if ( !tasks[taskName]) {
+    throw new Error(`Verifique que el ${taskName} exista en alguno las subcarpetas de ${subfolder}`); 
+  }
+  return tasks[taskName];
 }
 
 function isCriteriaMet(criteria?: ICriteria) {
@@ -88,10 +96,10 @@ export function validateTask(task: ITask) {
     } else if ( typeof (step as IStepFunction).function === 'string' ) {
       validateStep = validateFunction(step as IStepFunction);
     } else if ( typeof (step as IStepSubTask).subtask === 'string' ) {
-      const subtask = getTask( (step as IStepSubTask).subtask, SUBTASKS_FOLDER);
+      const subtask = getTask( (step as IStepSubTask).subtask, 'subtasks');
       validateStep = validateTask(subtask);
     } else if ( typeof (step as IStepTask).task === 'string' ) {
-      const subtask = getTask( (step as IStepTask).task, TASKS_FOLDER);
+      const subtask = getTask( (step as IStepTask).task, 'tasks');
       validateStep = validateTask(subtask);
     } else {
       console.log('Step no tiene command ni function ni subtask');
@@ -148,7 +156,7 @@ function previewStep(step: Step, tabs = '') {
   }
   if ( (step as IStepSubTask).subtask ) {
     tabs += '\t';
-    const subtask = getTask( (step as IStepSubTask).subtask, SUBTASKS_FOLDER);
+    const subtask = getTask( (step as IStepSubTask).subtask, 'subtasks');
     previewTask(subtask, tabs);
   } else {
     logStep(`${step.name}`, tabs );
@@ -172,7 +180,7 @@ async function runStep(step: Step, tabs: string) {
   } else if ( typeof (step as IStepFunction).function === 'string' ) {
     return await executeFunction(step as IStepFunction);
   } else if ( typeof (step as IStepSubTask).subtask === 'string' || typeof (step as IStepTask).task === 'string') {    
-    const subtask =  typeof (step as IStepSubTask).subtask === 'string' ? getTask((step as IStepSubTask).subtask, SUBTASKS_FOLDER) : getTask((step as IStepTask).task, TASKS_FOLDER);    
+    const subtask =  typeof (step as IStepSubTask).subtask === 'string' ? getTask((step as IStepSubTask).subtask, 'subtask') : getTask((step as IStepTask).task, 'tasks');    
     let stepContext = step.arguments ? context.mergeArgs(step.arguments): {};
     if ( Array.isArray(stepContext) ) {
       stepContext = createObject( subtask.arguments, stepContext);    

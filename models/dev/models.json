@@ -1,0 +1,19 @@
+[
+    { 
+        "title": "Salesforce con scratchs",
+        "value": "scratchs",
+        "default": true,
+        "description": "Desarrollos empresariales sobre Salesforce, usando una scracth para desarrollo de cada requerimiento"
+    },
+    { 
+        "title": "Second Generation Packages con Scratch Orgs",
+        "value": "packages",
+        "description": "ISV o desarrollos de aplicaciones en Salesforce"
+    },
+    { 
+        "title": "Paquetes de NPM",
+        "value": "npm",
+        "description": "Para herramientas complementarias como autoforce"
+    }
+]
+

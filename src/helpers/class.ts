@@ -1,9 +1,15 @@
 import { ObjectRecord, DocumentationModule } from "../types/auto.js";
 import sf from "./connect.js";
-import templateGenerator from "./template.js";
-import {DICTIONARY_FOLDER, TEMPLATE_MODEL_FOLDER} from "./util.js"
+import {default as templateGenerator, TemplateEngine } from "./template.js";
+import {DICTIONARY_FOLDER, getModelFolders} from "./util.js"
+let _templateEngine: undefined| TemplateEngine;
 
-const templateEngine = templateGenerator(`${TEMPLATE_MODEL_FOLDER}/dictionary`, "md");
+function getTemplateEngine(){
+  if ( !_templateEngine ) {
+    _templateEngine = templateGenerator( getModelFolders('dictionary'), "md");
+  }
+  return _templateEngine;
+}
 
 import {
   sortByName,
@@ -150,6 +156,8 @@ function getInnerClasses(classes: IApexClass[]): IApexClass[] {
 }
 
 async function executeClasses(items: string[], filename: string, folder: string): Promise<void> {
+  const templateEngine = getTemplateEngine();
+
   if (items.length === 0) {
     return;
   }

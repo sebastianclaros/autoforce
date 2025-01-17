@@ -1,11 +1,14 @@
 {
   "version": "0.1.17",
   "backlogColumn": "Todo",
-  "model": "modelC",
-  "modelTemplates": "modelB",
   "gitServices": "github",
+  "gitModel": "githubflow",
+  "projectModel": "github-releases",
   "projectServices": "github",
   "projectId": "4",
   "listFilter": "mios",
-  "listTemplate": "openIssues"
+  "listTemplate": "openIssues",
+  "devModel": "npm",
+  "docModel": "processes",
+  "modelTemplates": "processes"
 }

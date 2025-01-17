@@ -1,8 +1,15 @@
 import { DocumentationModule } from "../types/auto.js";
 import sf from "./connect.js";
-import templateGenerator from "./template.js";
-import {DICTIONARY_FOLDER, TEMPLATE_MODEL_FOLDER} from "./util.js"
-const templateEngine = templateGenerator(`${TEMPLATE_MODEL_FOLDER}/dictionary`, "md");
+import {default as templateGenerator, TemplateEngine } from "./template.js";
+import {DICTIONARY_FOLDER, getModelFolders} from "./util.js"
+let _templateEngine: undefined| TemplateEngine;
+
+function getTemplateEngine(){
+  if ( !_templateEngine ) {
+    _templateEngine = templateGenerator( getModelFolders('dictionary'), "md");
+  }
+  return _templateEngine;
+}
 
 import {
   sortByName,
@@ -33,8 +40,9 @@ function getLwc(files: string[]) {
 }
 
 async function executeLwc( items: string[], filename: string, folder: string): Promise<void> {
-    if (items.length === 0) {
-    return;
+  const templateEngine = getTemplateEngine();
+  if (items.length === 0) {
+   return;
   }
   // Busca la metadata
   const contexts = await getMetadata(items );
@@ -56,13 +64,12 @@ async function executeLwc( items: string[], filename: string, folder: string): P
   contexts.sort(sortByName);
   templateEngine.read("lwcs");
 
-
   const lwcContext = { lwc: contexts };
   templateEngine.render(lwcContext, {
     helpers: {}
   });
   
-  templateEngine.save(filename, TEMPLATE_MODEL_FOLDER + "/" + folder);
+  templateEngine.save(filename, folder);
 }
 
 

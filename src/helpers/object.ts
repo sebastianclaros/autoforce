@@ -1,9 +1,16 @@
 import { CustomObject } from "jsforce/lib/api/metadata.js";
 import { ObjectRecord, DocumentationModule } from "../types/auto.js";
 import sf from "./connect.js";
-import templateGenerator from "./template.js";
-import {DICTIONARY_FOLDER, TEMPLATE_MODEL_FOLDER} from "./util.js"
-const templateEngine = templateGenerator(`${TEMPLATE_MODEL_FOLDER}/dictionary`, "md");
+import {default as templateGenerator, TemplateEngine } from "./template.js";
+import {DICTIONARY_FOLDER, getModelFolders} from "./util.js"
+let _templateEngine: undefined| TemplateEngine;
+
+function getTemplateEngine(){
+  if ( !_templateEngine ) {
+    _templateEngine = templateGenerator( getModelFolders('dictionary'), "md");
+  }
+  return _templateEngine;
+}
 
 import {
   sortByLabel
@@ -104,6 +111,7 @@ function getObjects(files: string[]): string[] {
 
 
 async function executeObjects(items: string[], filename: string, folder: string): Promise<void> {
+  const templateEngine = getTemplateEngine();
   if (items.length === 0) {
     return;
   }
@@ -131,7 +139,7 @@ async function executeObjects(items: string[], filename: string, folder: string)
   templateEngine.render(objectContext, {
     helpers: { isManaged, isMetadataFormula, attributesFormula }
   });
-  templateEngine.save(filename, TEMPLATE_MODEL_FOLDER + "/" + folder);
+  templateEngine.save(filename, folder);
 }
 
 

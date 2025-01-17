@@ -15,8 +15,7 @@
   },
   "main": "./bin/index.js",
   "files": [
-    "commands/**/*",
-    "templates/**/*",
+    "models/**/*",
     "lib/**/*",
     ".autoforce.json",
     "bin/**/*"

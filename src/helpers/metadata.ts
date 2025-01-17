@@ -14,7 +14,6 @@ export default helpers;
 
 /*
 import context from "./context.js";
-import { TEMPLATE_MODEL_FOLDER } from "./util.js";
 import type { DocumentationModule, IProcessInfo, IMetadataNode, IMetadataComponentNode } from "../types/auto.js";
 function getMetadataFromContext(components: string[]) {
     return getMetadataArray(context.getProcessMetadata(), components);
@@ -70,7 +69,7 @@ function getMetadataArray(metadata: IProcessInfo[], props: string[]) {
       return items;
     };
   
-    return getItemsFromTree({ folder: TEMPLATE_MODEL_FOLDER, childs: metadata });
+    return getItemsFromTree({ folder: TEMPLATE_FOLDER, childs: metadata });
   }
   
 export async function execute() {

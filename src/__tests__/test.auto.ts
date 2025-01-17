@@ -1,5 +1,4 @@
 import { getConfigFromArgs } from "../auto";
-import { SUBTASKS_FOLDER, TASKS_FOLDER } from "../helpers/tasks";
 
 describe("ConfigFromArgs", () =>  {
 
@@ -8,7 +7,6 @@ describe("ConfigFromArgs", () =>  {
         const config = getConfigFromArgs(processArgs);
 
         expect( config.command).toBe('task' );
-        expect( config.taskFolder).toBe(TASKS_FOLDER );
         expect( config.taskName).toBe('taskName' ); 
         expect( config.options.issueNumber).toBe('1' ); 
     });
@@ -18,7 +16,6 @@ describe("ConfigFromArgs", () =>  {
         const config = getConfigFromArgs(processArgs);
 
         expect( config.command).toBe('task' );
-        expect( config.taskFolder).toBe(TASKS_FOLDER );
         expect( config.taskName).toBe('taskName' ); 
         expect( config.arguments).toBe( [ '1' ] ); 
     });
@@ -30,7 +27,6 @@ describe("ConfigFromArgs", () =>  {
         const config = getConfigFromArgs(processArgs);
     
         expect( config.command).toBe('task' );
-        expect( config.taskFolder).toBe(TASKS_FOLDER );
         expect( config.taskName).toBe('taskName' ); 
     });
     
@@ -40,7 +36,6 @@ describe("ConfigFromArgs", () =>  {
         const config = getConfigFromArgs(processArgs);
     
         expect( config.command).toBe('task' );
-        expect( config.taskFolder).toBe(TASKS_FOLDER );
         expect( config.taskName).toBe('taskName' ); 
     });
     
@@ -49,7 +44,6 @@ describe("ConfigFromArgs", () =>  {
         const processArgs = [ 'subtask', 'taskName'] ;
         const config = getConfigFromArgs(processArgs);    
         expect( config.command).toBe('subtask' );
-        expect( config.taskFolder).toBe(SUBTASKS_FOLDER );
         expect( config.taskName).toBe('taskName' ); 
     });
     
@@ -59,7 +53,6 @@ describe("ConfigFromArgs", () =>  {
         const config = getConfigFromArgs(processArgs);
     
         expect( config.command).toBe('preview' );
-        expect( config.taskFolder).toBe(SUBTASKS_FOLDER );
         expect( config.taskName).toBe('taskName' ); 
     });
     
@@ -69,7 +62,6 @@ describe("ConfigFromArgs", () =>  {
         const config = getConfigFromArgs(processArgs);
     
         expect( config.command).toBe('preview' );
-        expect( config.taskFolder).toBe(TASKS_FOLDER );
         expect( config.taskName).toBe('taskName' );
     });
     
@@ -79,7 +71,6 @@ describe("ConfigFromArgs", () =>  {
         const config = getConfigFromArgs(processArgs);
     
         expect( config.command).toBe('help' );
-        expect( config.taskFolder).toBe(SUBTASKS_FOLDER );
         expect( config.taskName).toBe('taskName' );
     });
     
@@ -90,7 +81,6 @@ describe("ConfigFromArgs", () =>  {
         const config = getConfigFromArgs(processArgs);
     
         expect( config.command).toBe('help' );
-        expect( config.taskFolder).toBe(TASKS_FOLDER );
         expect( config.taskName).toBe('taskName' );
     });
 })

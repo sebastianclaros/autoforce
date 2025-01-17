@@ -1,5 +1,5 @@
 import { executeShell, getOrganizationObject, getCurrentOrganization, getBranchName, getTargetOrg } from "./taskFunctions.js"
-import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems, CONFIG_FILE, createConfigurationFile, getDataFromPackage, TEMPLATES_FOLDER } from "./util.js";
+import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems, CONFIG_FILE, createConfigurationFile, getDataFromPackage } from "./util.js";
 import {GitHubApi} from "./github-graphql.js";
 import {GitHubProjectApi} from "./github-project-graphql.js";
 import {GitLabApi} from "./gitlab-graphql.js";
@@ -35,12 +35,15 @@ const ISSUES_TYPES = [ { value: 'feature', title: 'feature' }, { value: 'bug', t
   
 class Context implements IObjectRecord {
     [s: string]: AnyValue | undefined;
-    model: string = 'modelA'; // Default Model de commands
-    modelTemplates: string = 'modelA'; // Default Model de templates
+    devModel: string|undefined; // Default Model de commands
+    gitModel: string|undefined;
+    docModel: string|undefined;
+    projectModel: string|undefined;
     gitServices: GitServices = GitServices.None; 
     isGitApi = false;
     gitApi: IGitApi | undefined;
     version :string | undefined;    
+    dictionaryFolder:string = process.cwd() + "/docs";
 
     options: Record<string,AnyValue> = {};
 
@@ -288,9 +291,9 @@ class Context implements IObjectRecord {
     get processesHeader(): Record<string,IProcessHeader> {
         if ( !this._processesHeader ) {
             this._processesHeader = {};
-            const folders = getFiles(process.cwd() + "/docs", filterDirectory, true, ['diccionarios']);
+            const folders = getFiles(this.dictionaryFolder, filterDirectory, true, ['diccionarios']);
             for ( const folder of folders )  {
-                const fullpath = `${process.cwd()}/docs/${folder}`;
+                const fullpath = `${this.dictionaryFolder}/${folder}`;
                 const filenames = getFiles( fullpath, filterProcesses );
                 for ( const filename of filenames ) {
                     const header = this.getProcessHeader(fullpath + "/" + filename); 
@@ -305,7 +308,7 @@ class Context implements IObjectRecord {
 
     // TODO: merge con getProcessFromDocs
     getProcessMetadata(): IProcessInfo[] {
-        const folders = getFiles(process.cwd() + "/docs", filterDirectory, true, ['diccionarios']);
+        const folders = getFiles(this.dictionaryFolder, filterDirectory, true, ['diccionarios']);
         const retArray = [];
         for ( const folder of folders )  {
             const fullpath = `${process.cwd()}/docs/${folder}`;
@@ -328,7 +331,7 @@ class Context implements IObjectRecord {
     }
 
     getModules(): string[] {
-        return getFiles(process.cwd() + "/docs", filterDirectory, false, ['diccionarios']);
+        return getFiles(this.dictionaryFolder, filterDirectory, false, ['diccionarios']);
     }
 
     get modules(): PromptChoices {

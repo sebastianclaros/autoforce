@@ -1,0 +1,9 @@
+[
+    { 
+        "title": "Github flow branching model",
+        "value": "githubflow",
+        "default": true,
+        "description": "Cada feature se desarrolla en una feature branch y se mergea en main"
+    }
+]
+

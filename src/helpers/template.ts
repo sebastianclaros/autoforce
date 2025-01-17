@@ -1,7 +1,7 @@
 import fs from "fs";
 import Handlebars from "handlebars";
 import { merge } from "./merge.js";
-import { getFiles } from "./util.js";
+import { getFiles, getFilesInFolders } from "./util.js";
 
 function isObjectEmpty(objectName: object) {
   return (
@@ -32,25 +32,27 @@ function openTemplate(sourceFolder: string, templateName: string, extension: str
   return content;
 }
 
-class TemplateEngine{
+export class TemplateEngine{
   _template: HandlebarsTemplateDelegate | undefined;
   _rendered: string | undefined;
   _extension: string;
-  _sourceFolder: string;
+  _sourceFolders: string[];
 
-  constructor (source: string, extension: string = '*') {
-    this._sourceFolder = source;
-    if (!fs.existsSync(this._sourceFolder)) {
-      throw new Error(`La carpeta source ${this._sourceFolder} no existe!`);
-    }
+  constructor (sources: string[], extension: string = '*') {
+    this._sourceFolders = sources;
     this._extension = extension;
+    for ( const sourceFolder of this._sourceFolders) {
+      if (!fs.existsSync(sourceFolder)) {
+        throw new Error(`La carpeta source ${sourceFolder} no existe!`);
+      }
+    }
   };
   
   getTemplates() {
     const filterThisExtension = (file: string): boolean => file.endsWith(`.${this._extension}`) || this._extension === '*';
 
     const templates = [];
-    const files = getFiles(this._sourceFolder, filterThisExtension , true, ['dictionary']);
+    const files = getFilesInFolders(this._sourceFolders, filterThisExtension , true, ['dictionary']);
     for (const filename of files) {
       const [name] = filename.split(".");
       templates.push(name);
@@ -59,25 +61,32 @@ class TemplateEngine{
     return templates;
   }
 
-  getNameAndExtension(templateName:string) {
+  findTemplateByName(templateName:string) {
+    let folder;
+    let name = templateName;
+    let extension = this._extension;
     // Si viene la extension en el nombre la extrae
     if ( templateName.split(".").length > 1 ) {
-      return templateName.split(".");    
+      [name, extension] = templateName.split(".");    
     }
-    // Si viene la extension * busca cual puede ser en el directorio
-    if ( this._extension === '*' || this._extension === '' ) {
-      const fileNames = getFiles(this._sourceFolder, fileName=> fileName.split(".")[0].endsWith(templateName)); 
+    // Busca en las carpetas el archivo
+    for ( const currentFolder of this._sourceFolders ) {
+      folder = currentFolder;
+      const filterWithExtension = (fileName:string) => fileName === `${name}.${extension}`;
+      const filterWithoutExtension = (fileName:string)=> fileName.split(".")[0].endsWith(name);
+      const filter = ( extension === '*' || extension === '' ) ?  filterWithoutExtension: filterWithExtension; 
+      const fileNames = getFiles(folder, filter ); 
       if ( fileNames.length > 0 ) {
-        return fileNames[0].split(".");          
+        [name, extension] = fileNames[0].split(".");
+        return  {folder, name, extension};
       }
     }
-    // Por defecto usa el templateName como nombre y la extension
-    return [templateName, this._extension];
+    throw new Error(`No se encontro el template ${templateName} en ninguna de las carpetas ${this._sourceFolders}` );
   }
   read (templateName: string) {
     // Por defecto usa el templateName como nombre y la extension
-    const [name, extension]  = this.getNameAndExtension(templateName);
-    const rawTemplate = openTemplate(this._sourceFolder, name, extension);
+    const {folder, name, extension }  = this.findTemplateByName(templateName);
+    const rawTemplate = openTemplate(folder, name, extension);
     this._template = Handlebars.compile(rawTemplate);
   }
 
@@ -124,6 +133,6 @@ class TemplateEngine{
   }
 }
 
-export default (source: string, extension: string) => {
+export default (source: string[], extension: string) => {
   return new TemplateEngine(source, extension);
 }

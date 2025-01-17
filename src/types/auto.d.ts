@@ -6,7 +6,7 @@ type CommandOptions = {
 
 type ConfigArguments = {
     taskName: string;
-    taskFolder: string;
+    subfolder: string;
     command: string;
     arguments?: string[];
     options: CommandOptions

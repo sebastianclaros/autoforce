@@ -1,10 +1,10 @@
 // Comandos validos
-import {createObject,  validateTask, getTasks, helpTask, runTask, getTaskFolder} from "./helpers/tasks.js";
+import {createObject,  validateTask, getTasks, helpTask, runTask, getTaskFolders} from "./helpers/tasks.js";
 import { ITask } from "./types/helpers/tasks.js";
 import { logError} from "./helpers/color.js";
 import prompts from "prompts";
 import type { CommandFunction, CommandTaskFunction,  ConfigArguments } from "./types/auto.js";
-import { createConfigurationFile, getConfigFile, searchInFolderHierarchy } from "./helpers/util.js";
+import { createConfigurationFile, getConfigFile } from "./helpers/util.js";
 import context from "./helpers/context.js";
 import { fileURLToPath } from "url";
 import { dirname } from 'path';
@@ -32,7 +32,7 @@ export default async function main() {
         const config = getConfigFromArgs(process.argv.slice(2));
         const taskCommandKeys = Object.keys(taskCommand);
         if ( taskCommandKeys.includes(config.command) ) {
-            const tasks = getTasks(config.taskFolder);
+            const tasks = getTasks(config.subfolder);
             const taskName = await askForTaskName(config.taskName, tasks);
             if ( taskName ) {        
                 const task = tasks[taskName];
@@ -55,7 +55,7 @@ export default async function main() {
 }
 
 export function getConfigFromArgs(processArgs: string[]): ConfigArguments {
-    const config: ConfigArguments = { options : {}, taskName: '', command: '', taskFolder: ''  };
+    const config: ConfigArguments = { options : {}, taskName: '', command: '', subfolder: '', arguments: []  };
     const args = [];
     // Divide --xxx como options el resto como args
     for ( const argName of processArgs ) {
@@ -77,10 +77,10 @@ export function getConfigFromArgs(processArgs: string[]): ConfigArguments {
     }
     // Setea el taskFolder segun si es un task o subtask
     if ( (config.command == 'help' || config.command == 'preview') && ( currentArgument == 'subtask' || currentArgument == 'task') ) {
-        config.taskFolder =  getTaskFolder(currentArgument);
+        config.subfolder =  currentArgument;
         currentArgument = args.shift();
     } else {
-        config.taskFolder =  getTaskFolder(config.command);
+        config.subfolder =  config.command;
     }
 
     if ( typeof currentArgument == 'string') {

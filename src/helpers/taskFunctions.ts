@@ -6,10 +6,10 @@ import prompts, { Choice } from "prompts";
 import templateGenerator from "./template.js";
 import type { IStepCommand, IStepFunction, StepArguments, TaskFunction } from "../types/helpers/tasks.js";
 import { AnyValue, ObjectRecord } from "../types/auto.js";
-import { filterBash, getFiles, storeConfig, TEMPLATE_MODEL_FOLDER, valuesToChoices } from "./util.js";
+import { filterBash, getFilesInFolders, getModelFolders, storeConfig, valuesToChoices } from "./util.js";
 
 
-function generateTemplate( templateFolder: string, templateExtension: string, template: string, context: ObjectRecord) {
+function generateTemplate( templateFolder: string[], templateExtension: string, template: string, context: ObjectRecord) {
     if (!template || !templateFolder || !templateExtension) {
         return;
     }
@@ -28,7 +28,7 @@ function createTemplate( templateFolder: string, templateExtension: string, temp
     if (!template || !filename || !templateFolder || !templateExtension) {
         return;
     }
-    const templateEngine = templateGenerator(templateFolder, templateExtension);
+    const templateEngine = templateGenerator([templateFolder], templateExtension);
 
     const formulas = {
         today: Date.now(),
@@ -471,7 +471,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         }
                 
         const result = await context.projectApi.getIssue(issueNumber);
-        const rendered = generateTemplate( TEMPLATE_MODEL_FOLDER , 'bash', template, { issue: result, ...context});
+        const rendered = generateTemplate( getModelFolders('templates') , 'bash', template, { issue: result, ...context});
         
         console.log( rendered);        
         return true;
@@ -548,7 +548,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         }
 
         if ( !listTemplate ) {
-            const files = getFiles(TEMPLATE_MODEL_FOLDER, filterBash ).map( filename => filename.split(".")[0] );
+            const files = getFilesInFolders(getModelFolders('templates'), filterBash ).map( filename => filename.split(".")[0] );
             const templates: Choice[] = valuesToChoices(files);
             const answer = await prompts([
                 {
@@ -564,7 +564,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         }
         const result = await context.projectApi.getIssuesWithFilter(filter);
         console.log(context.version);
-        const rendered = generateTemplate( TEMPLATE_MODEL_FOLDER , extension, listTemplate, { issues: result, context});        
+        const rendered = generateTemplate( getModelFolders('templates') , extension, listTemplate, { issues: result, context});        
         console.log( rendered);
         return true;
     },    

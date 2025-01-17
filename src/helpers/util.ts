@@ -5,12 +5,10 @@ import context, { ProjectServices, GitServices } from "./context.js";
 import { logInfo, logWarning } from "./color.js";
 import { AnyValue, ObjectRecord } from "../types/auto.js";
 import { config } from "process";
-const COMMAND_FOLDER = searchInFolderHierarchy('commands', fileURLToPath(import.meta.url));
+const MODELS_FOLDER = searchInFolderHierarchy('models', fileURLToPath(import.meta.url));
 export const WORKING_FOLDER = process.env.INIT_CWD || ".";
 export const CONFIG_FILE = searchInFolderHierarchy('.autoforce.json', WORKING_FOLDER);
-export const TEMPLATES_FOLDER = searchInFolderHierarchy('templates', fileURLToPath(import.meta.url));
-export const TEMPLATE_MODEL_FOLDER = TEMPLATES_FOLDER + '/' + getConfig('modelTemplates', 'modelA');
-export const DICTIONARY_FOLDER =  TEMPLATE_MODEL_FOLDER + "/diccionarios";
+export const DICTIONARY_FOLDER =  process.cwd() + "/docs"; //  context.dictionaryFolder;
 export const filterJson = (fullPath: string): boolean => fullPath.endsWith(".json");
 export const filterDirectory = (fullPath: string): boolean => fs.lstatSync(fullPath).isDirectory();
 export const filterFiles = (fullPath: string): boolean => !fs.lstatSync(fullPath).isDirectory();
@@ -77,6 +75,30 @@ export function findChoicesPosition( choices: Choice[], value: string) {
   return index === -1 ? 0: index;
 }
 
+export function getFilesInFolders(folders: string[], filter: (fullPath: string) => boolean, recursive = false, ignoreList: string[] = []): string[] {
+  const files = new Set<string>();
+  for ( const folder in folders) {
+    getFiles( folder, filter, recursive, ignoreList)
+      .forEach( files.add );
+  }
+  return [...files];
+}
+
+
+export function getModelFolders(subfolder: string) {
+  const folder =  [
+    `${MODELS_FOLDER}/dev/${context.devModel}/${subfolder}`, 
+    `${MODELS_FOLDER}/git/${context.gitModel}/${subfolder}`, 
+    `${MODELS_FOLDER}/doc/${context.docModel}/${subfolder}`, 
+    `${MODELS_FOLDER}/project/${context.projectModel}/${subfolder}`, 
+  ];
+  // Filter only folders that exists
+  return folder.filter( folder => fs.existsSync(folder) );
+} 
+function getTemplates(filter: (fullPath: string) => boolean ): string[] {
+  return getFilesInFolders( getModelFolders('templates'), filter);
+}
+
 async function getTaskConfig(config: Record<string, AnyValue>): Promise<Record<string, AnyValue>| undefined> {
     // TODO: Ver si esto se mueve a un config list
     // List Command settings
@@ -92,7 +114,7 @@ async function getTaskConfig(config: Record<string, AnyValue>): Promise<Record<s
     ]);
     if ( listFilter.filter === undefined) return ;
     config.listFilter= listFilter.filter;
-    const files = getFiles(`${TEMPLATES_FOLDER}/${config.modelTemplates}`, filterBash ).map( filename => filename.split(".")[0] );
+    const files = getTemplates(filterBash ).map( filename => filename.split(".")[0] );
     if ( files.length > 0 ) {
       const templates: Choice[] = valuesToChoices(files);
       const template = await prompts([
@@ -114,6 +136,7 @@ async function getBaseConfig(config: Record<string, AnyValue>): Promise<Record<s
    // Todo: Chequear el repoOwner y repo
    const gitChoices = [ { title: 'Github', value: GitServices.GitHub }, { title: 'Gitlab', value:  GitServices.GitLab}];
  
+
    // Preguntar por GitHub o GitLab
    const gitServices = await prompts([{
        type: "select",
@@ -132,33 +155,22 @@ async function getBaseConfig(config: Record<string, AnyValue>): Promise<Record<s
      if ( gitServices.git === GitServices.GitLab && !process.env.GITLAB_TOKEN) {
        logWarning('A fin de que la herramienta funcione debe configurar una variable de entorno GITLAB_TOKEN');  
      }
- 
-     // Selecciona el modelo de automatizacion
-     const models: Choice[] = readJsonSync(`${COMMAND_FOLDER}/models.json`);
-     models.push( { title: 'Personalizado', value: 'custom', description: 'En este caso los comandos son configurados fuera de la herramienta y los lee de la carpeta commands en el root del repo' });     
-     const automationModel = await prompts([{
-       type: "select",
-       name: "model",
-       message: "Elija un modelo de automatizacion",
-       initial: findChoicesPosition( models,  config.model ),
-       choices: models 
-       }]);
-     if ( automationModel.model === undefined) return;
-     config.model = automationModel.model;
- 
-     // Si es custom pregunta si quiere tomar de base alguno existente
-     if ( automationModel.model === 'custom' ) {
-       const baseModel = await prompts([{
-         type: "select",
-         name: "model",
-         message: "Quiere tomar algun modelo existente de base ? Este se copiara a la carpeta ",
-         choices: models.concat( [{ title: 'No quiero usar ningun modelo', value: 'none'}])
-         }]);  
-       if ( baseModel.model !== 'none' ) {
-         console.log('copy archivos..');
-       }
+     
+     // Selecciona los modelos de automatizacion
+     for ( const prefix of ['dev', 'git', 'doc', 'project'] ) {
+      const contextProperty = prefix + 'Model';
+        const models = readJsonSync<Choice[]>(`${MODELS_FOLDER}/${prefix}/models.json`);
+        const automationModel = await prompts([{
+          type: "select",
+          name: "model",
+          message: `Elija un modelo de automatizacion para ${prefix}`,
+          initial: findChoicesPosition( models,  config[contextProperty] ),
+          choices: models 
+          }]);
+        if ( automationModel.model === undefined) return;
+        config[contextProperty] =  automationModel.model;        
      }
- 
+
      // Gestion del Proyecto
      const projectChoices = [ { title: 'Github Projects', value: ProjectServices.GitHub}, { title: 'GitLab Projects', value: ProjectServices.GitLab} , { title: 'Jira', value: ProjectServices.Jira}  , { title: 'None', value: ProjectServices.None} ]
      const projectServices = await prompts([{
@@ -194,22 +206,11 @@ async function getBaseConfig(config: Record<string, AnyValue>): Promise<Record<s
    if ( projectId.projectId === undefined) return ;      
    config.projectId = projectId.projectId;
  
-   // Modelo de Dcumentacion
-   const modelsTemplates: Choice[] = readJsonSync(`${TEMPLATES_FOLDER}/models.json`);
-   const modelTemplates = await prompts([{
-     type: "select",
-     name: "model",
-     message: "Elija un modelo de documentacion",
-     initial: findChoicesPosition( modelsTemplates,  config.modelTemplates ),
-     choices: modelsTemplates 
-   }]);
-   if ( modelTemplates.model === undefined) return ;      
-   config.modelTemplates = modelTemplates.model;
   return config;
 }
 
 export async function createConfigurationFile(taskName?: string) {
-  const baseConfig = { backlogColumn: context.backlogColumn, model: context.model, modelTemplates: context.modelTemplates ,gitServices: context.gitServices, projectServices: context.projectServices, projectId: context.projectId, listFilter: context.listFilter, listTemplate: context.listTemplate  };
+  const baseConfig = { backlogColumn: context.backlogColumn, devModel: context.devModel, docModel: context.docModel, projectModel: context.projectModel, gitModel: context.gitModel ,gitServices: context.gitServices, projectServices: context.projectServices, projectId: context.projectId, listFilter: context.listFilter, listTemplate: context.listTemplate  };
   let config = taskName ? await getTaskConfig(baseConfig): await getBaseConfig(baseConfig);
   if ( !config ) return false;
   storeConfig(config);
@@ -362,9 +363,11 @@ export function convertKeyToName( key: string ): string {
       .join(' ');
 }
 
-export function readJsonSync(filename: string): prompts.Choice[] {
+export function readJsonSync<T>(filename: string): T {
   const content = fs.readFileSync(filename, "utf8");
-  const data = JSON.parse(content);
-  return data;
+  try {
+    return JSON.parse(content) as T;
+  } catch {
+    throw new Error(`Verifique que el ${filename} sea json valido`  );
+  }
 }
-

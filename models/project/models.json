@@ -1,0 +1,9 @@
+[
+    { 
+        "title": "Proyectos con releases",
+        "value": "github-releases",
+        "default": true,
+        "description": "Manejo de releases en Github proyects"
+    }
+]
+
