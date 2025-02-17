@@ -1,6 +1,6 @@
 {
     "extends": "./tsconfig.json",
     "exclude": [
-      "node_modules", "docs", "src/__tests__/**/*.ts", "jest.config.ts"
+      "node_modules", "docs", "src/__tests__/**/*.ts", "vitest.config.ts"
     ]
   }

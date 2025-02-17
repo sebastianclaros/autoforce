@@ -140,16 +140,17 @@ export async function runTask(task: ITask, taskContext: CommandOptions, tabs = '
   return true;
 }
 
-export async function previewTask(task: ITask, tabs = '') {
+export async function previewTask(task: ITask, taskContext: CommandOptions, tabs = '') {
   initializeContext();
   logStep(`${task.name}: ${task.description}`, tabs );
     
   for ( const step of task.steps ) {
-    previewStep(step, tabs); 
+    previewStep(step,  taskContext, tabs); 
   }
+  return true
 }
 
-function previewStep(step: Step, tabs = '') {
+function previewStep(step: Step, taskContext: CommandOptions, tabs = '') {
   if ( step.criteria ) {
     logStep(`Si ${step.criteria.field} ${step.criteria.operator || '=='} ${step.criteria.value}`, tabs );
     tabs += '\t';
@@ -157,7 +158,7 @@ function previewStep(step: Step, tabs = '') {
   if ( (step as IStepSubTask).subtask ) {
     tabs += '\t';
     const subtask = getTask( (step as IStepSubTask).subtask, 'subtasks');
-    previewTask(subtask, tabs);
+    previewTask(subtask, taskContext, tabs);
   } else {
     logStep(`${step.name}`, tabs );
   }
