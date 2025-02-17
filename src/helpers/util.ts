@@ -25,51 +25,6 @@ export function titlesToChoices( list: string[], titleToValue=(title:string)=>ti
   return list.map( title => { return { title,  value: titleToValue(title) } } ) ;    
 } 
 
-
-export function getDataFromPackage() {
-  const data :Record<string,string> = {};
-  try {
-    const filename = searchInFolderHierarchy( "package.json", process.cwd() ); 
-    if ( !filename ) {
-      throw new Error("No se encontro el package.json en " + process.cwd());
-    }
-    const content = fs.readFileSync(filename, "utf8");
-    const packageJson = JSON.parse(content);
-    if ( packageJson.repository ) {
-        if ( packageJson.repository.url ) {
-          data.repositoryUrl = packageJson.repository.url;
-          data.repositoryType = packageJson.repository.type;
-            // Ver de sacar repo y owner
-          if ( data.repositoryUrl  ) {
-            if ( data.repositoryUrl.includes("github.com") ){
-              const repositoryArray =  data.repositoryUrl.split('github.com/');
-              [data.repositoryOwner, data.repositoryRepo] = repositoryArray[1].split('/');
-            }
-            if ( data.repositoryUrl.includes("gitlab.com") ){
-              const repositoryArray =  data.repositoryUrl.split('gitlab.com/');
-              [data.repositoryOwner, data.repositoryRepo] = repositoryArray[1].split('/');
-            }            
-          } 
-        } else if ( typeof packageJson.repository === 'string' ) {
-          data.repositoryUrl = packageJson.repository as string;
-            const repositoryArray =  data.repositoryUrl.split(':');
-            data.repositoryType = repositoryArray[0];
-            [data.repositoryOwner, data.repositoryRepo] = repositoryArray[1].split('/');
-        }
-        if ( data.repositoryRepo && data.repositoryRepo.endsWith('.git') ) {
-          data.repositoryRepo = data.repositoryRepo.replace('.git', '');
-        }
-    } 
-  } catch (error) {
-      console.log(error);
-      throw new Error(`Verifique que exista y sea valido el package.json`  );
-  }  
-
-
-  return data;
-
-}
-
 export function findChoicesPosition( choices: Choice[], value: string) {
   const index =  choices.findIndex( choice => choice.value === value );
   return index === -1 ? 0: index;

@@ -1,5 +1,5 @@
 // Comandos validos
-import {createObject,  validateTask, getTasks, helpTask, runTask, getTaskFolders} from "./helpers/tasks.js";
+import {createObject,  validateTask, getTasks, previewTask, helpTask, runTask, getTaskFolders} from "./helpers/tasks.js";
 import { ITask } from "./types/helpers/tasks.js";
 import { logError} from "./helpers/color.js";
 import prompts from "prompts";
@@ -15,6 +15,7 @@ const proxyCommand: Record<string, CommandFunction> = {
 }
 const taskCommand: Record<string, CommandTaskFunction> = {
     'help': helpTask, 
+    'preview': previewTask, 
     'task': runTask,
     'new': runTask,
     'subtask': runTask

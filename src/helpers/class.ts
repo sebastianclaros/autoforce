@@ -155,7 +155,7 @@ function getInnerClasses(classes: IApexClass[]): IApexClass[] {
   return ret;
 }
 
-async function executeClasses(items: string[], filename: string, folder: string): Promise<void> {
+export async function executeClasses(items: string[], filename: string, folder: string): Promise<void> {
   const templateEngine = getTemplateEngine();
 
   if (items.length === 0) {

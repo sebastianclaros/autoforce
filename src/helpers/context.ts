@@ -1,5 +1,5 @@
 import { executeShell, getOrganizationObject, getCurrentOrganization, getBranchName, getTargetOrg } from "./taskFunctions.js"
-import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems, CONFIG_FILE, createConfigurationFile, getDataFromPackage } from "./util.js";
+import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems, CONFIG_FILE, createConfigurationFile } from "./util.js";
 import {GitHubApi} from "./github-graphql.js";
 import {GitHubProjectApi} from "./github-project-graphql.js";
 import {GitLabApi} from "./gitlab-graphql.js";
@@ -32,6 +32,65 @@ export enum ProjectServices {
 
 const filterProcesses: (fullPath: string) => boolean = (fullPath) =>  fullPath.endsWith(".md"); // && !fullPath.endsWith("intro.md") 
 const ISSUES_TYPES = [ { value: 'feature', title: 'feature' }, { value: 'bug', title: 'bug' }, { value: 'documentation', title: 'documentation' }, { value: 'automation', title: 'automation' }];
+
+function searchInFolderHierarchy( element: string, parentFolder: string ): string {
+    if ( fs.existsSync( `${parentFolder}/${element}` )) {
+      return `${parentFolder}/${element}`;
+    } else {  
+      const lastIndex = parentFolder.lastIndexOf('/');
+      if ( lastIndex !== -1 ){
+        const newParentFolder = parentFolder.substring(0, lastIndex); 
+        if ( newParentFolder !== '' ) {
+          return searchInFolderHierarchy(element, newParentFolder);
+        }
+      }
+    }
+    return '';
+  }
+  
+function getDataFromPackage() {
+    const data :Record<string,string> = {};
+    try {
+      const filename = searchInFolderHierarchy( "package.json", process.cwd() ); 
+      if ( !filename ) {
+        throw new Error("No se encontro el package.json en " + process.cwd());
+      }
+      const content = fs.readFileSync(filename, "utf8");
+      const packageJson = JSON.parse(content);
+      if ( packageJson.repository ) {
+          if ( packageJson.repository.url ) {
+            data.repositoryUrl = packageJson.repository.url;
+            data.repositoryType = packageJson.repository.type;
+              // Ver de sacar repo y owner
+            if ( data.repositoryUrl  ) {
+              if ( data.repositoryUrl.includes("github.com") ){
+                const repositoryArray =  data.repositoryUrl.split('github.com/');
+                [data.repositoryOwner, data.repositoryRepo] = repositoryArray[1].split('/');
+              }
+              if ( data.repositoryUrl.includes("gitlab.com") ){
+                const repositoryArray =  data.repositoryUrl.split('gitlab.com/');
+                [data.repositoryOwner, data.repositoryRepo] = repositoryArray[1].split('/');
+              }            
+            } 
+          } else if ( typeof packageJson.repository === 'string' ) {
+            data.repositoryUrl = packageJson.repository as string;
+              const repositoryArray =  data.repositoryUrl.split(':');
+              data.repositoryType = repositoryArray[0];
+              [data.repositoryOwner, data.repositoryRepo] = repositoryArray[1].split('/');
+          }
+          if ( data.repositoryRepo && data.repositoryRepo.endsWith('.git') ) {
+            data.repositoryRepo = data.repositoryRepo.replace('.git', '');
+          }
+      } 
+    } catch (error) {
+        console.log(error);
+        throw new Error(`Verifique que exista y sea valido el package.json`  );
+    }  
+  
+  
+    return data;
+  
+  }
   
 class Context implements IObjectRecord {
     [s: string]: AnyValue | undefined;
@@ -510,14 +569,17 @@ class Context implements IObjectRecord {
         } else {
             // Si viene args como objeto { name1: {...}, name2: {...}} lo convierte a [{name: name1...}, {name: name2...}]
             for (const key in inputs) {
-                if ( typeof inputs[key].default == 'string' ) {
-                    inputs[key].initial = this.merge(inputs[key].default);
+                if (typeof inputs[key].default === 'string') {
+                    inputs[key].initial = this.merge(inputs[key].default) ;
                 }
 
-                if ( typeof inputs[key].values == 'string' && typeof this[inputs[key].values] == 'function' ) {
-                    const choices = await this[inputs[key].values]();
-                    if ( Array.isArray(choices) ) {
-                        inputs[key].choices = choices;
+                if (typeof inputs[key].values === 'string') {
+                    const methodName = inputs[key].values as keyof typeof this;
+                    if (typeof this[methodName] === 'function') {                     
+                        const choices = await (this[methodName] as () => Promise<any>)();
+                        if (Array.isArray(choices)) {
+                            inputs[key].choices = choices;
+                        }                            
                     }
                 }
 
@@ -601,9 +663,9 @@ class Context implements IObjectRecord {
         }
     }
     
-    merge(text: string): string {
+    merge(text?: string): string {
         if( typeof text != 'string' || text.indexOf('${') === -1 ) {
-            return text; 
+            return text || ''; 
         }
 
         const matches = text.matchAll(/\$\{([^}]+)}/g);

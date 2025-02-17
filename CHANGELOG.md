@@ -2,7 +2,9 @@
 
 ## Version 0.1.18
 - Fecha: 
-- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.18)
+- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.18ra la placa 
+
+TIPO CASO: Tarea Programada SF Deploy 254 Core & Industry 4 h)
 - Cambios:
     * Reorganizar los modelos para que sea mas por la configuracion misma
         - https://github.com/sebastianclaros/autoforce/issues/46

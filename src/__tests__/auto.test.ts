@@ -17,7 +17,7 @@ describe("ConfigFromArgs", () =>  {
 
         expect( config.command).toBe('task' );
         expect( config.taskName).toBe('taskName' ); 
-        expect( config.arguments).toBe( [ '1' ] ); 
+        expect( config.arguments).toStrictEqual( [ '1' ] ); 
     });
     
     
