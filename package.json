@@ -2,7 +2,7 @@
   "name": "autoforce",
   "homepage": "https://sebastianclaros.github.io/autoforce",
   "private": false,
-  "version": "0.1.18",
+  "version": "0.1.19",
   "keywords": [
     "Salesforce",
     "Automation",
@@ -29,6 +29,7 @@
     "build": "tsc --project tsconfig.build.json",
     "prettier": "prettier --write \"**/*.{css,html,js,json,ts,md,xml,yaml,yml}\"",
     "test:build": "yarn build && npm publish --dry-run && node ./bin/index.js",
+    "test:package": "yarn build && npm publish --dry-run && node ./bin/index.js",
     "test": "vitest"
   },
   "devDependencies": {
