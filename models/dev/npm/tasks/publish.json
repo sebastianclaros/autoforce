@@ -9,6 +9,7 @@
     { "name": "Actualiza la version", "function": "storeConfig", "arguments": ["version", "${newVersion}"] },
     { "name": "Paquetiza", "subtask": "pack" },
     { "name": "Publica", "command": "yarn publish ", "arguments": {"--new-version": "${newVersion}"} },
-    { "name": "Salida para el Changelog.md", "task": "list", "arguments": {"filter": "milestone", "template": "changelog", "milestone": "${newVersion}"} }
+    { "name": "Salida para el Changelog.md", "task": "list", "arguments": {"filter": "milestone", "template": "changelog", "milestone": "${newVersion}"} },
+    { "name": "Actualiza el milestone", "function": "updateMilestone", "arguments": ["v${newVersion}", "closed"] }
   ]
 }

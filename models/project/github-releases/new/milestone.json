@@ -1,0 +1,21 @@
+{
+  "name": "milestone",
+  "guards": ["isGitApi"],
+  "arguments": {
+    "title": { "required": true },
+    "state": {
+      "type": "select",
+      "choices": [ { "value": "open", "label": "open"}, { "value": "closed", "label": "closed"} ]
+    },
+    "description": { "required": false },    
+    "dueOn": { "required": false }    
+  },
+  "description": "Comando para crear un milestone nuevo",
+  "steps": [
+    {
+      "name": "Crear un milestone  nuevo",
+      "function": "createMilestone",
+      "arguments": ["${title}", "${state}", "${description}", "${dueOn}"]
+    }
+  ]
+}

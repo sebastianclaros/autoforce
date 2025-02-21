@@ -3,8 +3,9 @@ interface IMilestone {
     id?: string;
     number?: number;
     title: string;
+    description?: string;
     state?: string;
-    dueOn?: string;
+    due_on?: string;
     url?: string;
 }
 interface ILabel {
@@ -47,6 +48,7 @@ interface IGitApi {
     getMilestones(): Promise<IMilestone[]>;
     createLabel: (name: string, color: string = 'random') => Promise<ILabel|undefined>;
     createMilestone: (title: string, state:string = 'open', description?: string, dueOn?: string) => Promise<IMilestone>;
+    updateMilestone: (title: string, state:string = 'open', description?: string, dueOn?: string) => Promise<IMilestone>;
 }
 
 interface IProjectApi {

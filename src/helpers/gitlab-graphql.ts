@@ -31,6 +31,7 @@ export class GitLabApi implements IGitApi, IProjectApi {
     }
     
     async  getIssuesWithFilter(filter: string) {
+      console.log(filter);
       return [];
     }
 
@@ -39,6 +40,10 @@ export class GitLabApi implements IGitApi, IProjectApi {
       return {id: '', name, color};
     }
     async createMilestone(title: string, state = 'open', description?: string, dueOn?: string ) {
+      console.log(title, state, description, dueOn) ;  
+      return { id: '', title: '', state: '', url: '' };
+    }
+    async updateMilestone(title: string, state = 'open', description?: string, dueOn?: string ) {
       console.log(title, state, description, dueOn) ;  
       return { id: '', title: '', state: '', url: '' };
     }

@@ -334,6 +334,21 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         console.log('Not implemented');
         return false;
     },
+    async createMilestone(title: string, state: string = 'open', description?: string, dueOn?: string): Promise<boolean> {
+        if ( context.projectApi === undefined || context.gitApi === undefined) {
+            return false;
+        }
+        const result = await context.gitApi.createMilestone(title, state, description, dueOn);
+        return result?.id ? true : false;
+    },    
+    async updateMilestone(title: string, state: string = 'open', description?: string, dueOn?: string): Promise<boolean> {
+        if ( context.projectApi === undefined || context.gitApi === undefined) {
+            return false;
+        }
+        console.log(title, state, description, dueOn) ;
+        const result = await context.gitApi.updateMilestone(title, state, description, dueOn);
+        return result?.id ? true : false;
+    },
     async createIssue(title: string, label: string, body?: string,  milestone?: string): Promise<boolean> {
         if ( context.projectApi === undefined || context.gitApi === undefined) {
             return false;

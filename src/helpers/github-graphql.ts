@@ -1,6 +1,5 @@
 import { graphql } from "@octokit/graphql";
 import { Octokit } from "octokit";
-import { AnyValue } from "../types/auto.js";
 
 
 export class GitHubApi implements IGitApi {
@@ -76,18 +75,39 @@ export class GitHubApi implements IGitApi {
     return colors[number];
   }
 
-  async createMilestone(title: string, state = 'open', description?: string, dueOn?: string) {
-    const result = await this.octokit.request(`POST /repos/${this.repoVar.owner}/${this.repoVar.repo}/milestones`, {
+  async updateMilestone(title: string, state = 'open', description?: string, dueOn?: string) {
+    const allMilestones = await this.getMilestones();
+    const toUpdate = allMilestones.filter( milestone => milestone.title === title)[0];
+    if ( !toUpdate ) {
+      throw new Error(`No se encontro el milestone ${title}`);
+    }
+    const milestone: IMilestone = {
       title,
       state,
       description,
-      due_on: dueOn,
-      headers: {
-        'X-GitHub-Api-Version': '2022-11-28'
-      }
-    });
-    const milestone = { id: result.data.node_id, title: result.data.title, description: result.data.description, dueOn: result.data.due_on , url: result.data.url };
-    return milestone;
+    };
+    
+    if ( dueOn ) {
+      milestone.due_on= dueOn;
+    }
+
+    const result = await this.octokit.request(`PATCH /repos/${this.repoVar.owner}/${this.repoVar.repo}/milestones/${toUpdate.number}`, {...milestone, ...{headers: {'X-GitHub-Api-Version': '2022-11-28'}}});
+    return  { id: result.data.node_id, title: result.data.title, description: result.data.description, dueOn: result.data.due_on , url: result.data.url };
+  }
+
+  async createMilestone(title: string, state = 'open', description?: string, dueOn?: string) {
+    const milestone: IMilestone = {
+      title,
+      state,
+      description,
+    };
+    
+    if ( dueOn ) {
+      milestone.due_on= dueOn;
+    }
+    const result = await this.octokit.request(`POST /repos/${this.repoVar.owner}/${this.repoVar.repo}/milestones`, {...milestone, ...{headers: {'X-GitHub-Api-Version': '2022-11-28'}}});
+    console.log( result.data.url);
+    return  { id: result.data.node_id, title: result.data.title, description: result.data.description, dueOn: result.data.due_on , url: result.data.url };
   }
   async  getUser() {    
     const query = `{
