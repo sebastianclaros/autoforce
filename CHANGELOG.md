@@ -1,5 +1,14 @@
 # Versiones
 
+## Version 0.1.20
+- Fecha: 
+- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.20)
+- Cambios:
+    * Test con instalacion de paquete
+        - https://github.com/sebastianclaros/autoforce/issues/49
+    * Que config tome argumentos
+        - https://github.com/sebastianclaros/autoforce/issues/51
+
 ## Version 0.1.18
 - Fecha: 
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.18ra la placa 
