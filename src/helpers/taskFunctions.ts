@@ -345,7 +345,6 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         if ( context.projectApi === undefined || context.gitApi === undefined) {
             return false;
         }
-        console.log(title, state, description, dueOn) ;
         const result = await context.gitApi.updateMilestone(title, state, description, dueOn);
         return result?.id ? true : false;
     },
