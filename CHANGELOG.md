@@ -1,5 +1,12 @@
 # Versiones
 
+## Version 0.1.22
+- Fecha: 
+- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.22)
+- Cambios:
+    * [publish] que cierre el milestone de la version
+        - https://github.com/sebastianclaros/autoforce/issues/35
+        
 ## Version 0.1.20
 - Fecha: 
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.20)
