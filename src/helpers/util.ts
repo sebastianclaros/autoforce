@@ -3,8 +3,7 @@ import { fileURLToPath } from 'url';
 import prompts, { Choice } from "prompts";
 import context, { ProjectServices, GitServices } from "./context.js";
 import { logInfo, logWarning } from "./color.js";
-import { AnyValue, ObjectRecord } from "../types/auto.js";
-import { config } from "process";
+import { AnyValue, CommandOptions, ObjectRecord } from "../types/auto.js";
 const MODELS_FOLDER = searchInFolderHierarchy('models', fileURLToPath(import.meta.url));
 export const WORKING_FOLDER = process.env.INIT_CWD || ".";
 export const CONFIG_FILE = searchInFolderHierarchy('.autoforce.json', WORKING_FOLDER);
@@ -136,7 +135,7 @@ async function getBaseConfig(config: Record<string, AnyValue>): Promise<Record<s
        choices: projectChoices
      }]);
      if ( projectServices.project === undefined) return;
-     config.projectServices = projectServices.project;;     
+     config.projectServices = projectServices.project;
  
      if ( projectServices.project === ProjectServices.GitHub || projectServices.project === ProjectServices.GitLab) {      
        // Gestion del Proyecto
@@ -164,9 +163,15 @@ async function getBaseConfig(config: Record<string, AnyValue>): Promise<Record<s
   return config;
 }
 
-export async function createConfigurationFile(taskName?: string) {
-  const baseConfig = { backlogColumn: context.backlogColumn, devModel: context.devModel, docModel: context.docModel, projectModel: context.projectModel, gitModel: context.gitModel ,gitServices: context.gitServices, projectServices: context.projectServices, projectId: context.projectId, listFilter: context.listFilter, listTemplate: context.listTemplate  };
-  let config = taskName ? await getTaskConfig(baseConfig): await getBaseConfig(baseConfig);
+export async function createConfigurationFile(taskName?: string, options?: CommandOptions) {
+  if ( options?.noprompt ) {
+    delete options.noprompt;
+    storeConfig(options);
+    return true;    
+  }
+  const baseConfig = { backlogColumn: options?.backlogColumn || context.backlogColumn, devModel: options?.devModel || context.devModel, docModel: options?.docModel ||context.docModel, projectModel: options?.projectModel ||context.projectModel, gitModel: options?.gitModel ||context.gitModel ,gitServices: options?.gitServices || context.gitServices, projectServices: options?.projectServices ||context.projectServices, projectId: options?.projectId ||context.projectId, listFilter: options?.listFilter ||context.listFilter, listTemplate: options?.listTemplate || context.listTemplate  };
+  const config = taskName ? await getTaskConfig(baseConfig): await getBaseConfig(baseConfig);
+
   if ( !config ) return false;
   storeConfig(config);
 
