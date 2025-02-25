@@ -1,5 +1,12 @@
 # Versiones
 
+0.1.23
+## Version 0.1.23
+- Fecha: 
+- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.23)
+- Cambios:
+    * Bugfixing para la suit de test autoforce-test
+
 ## Version 0.1.22
 - Fecha: 
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.22)
