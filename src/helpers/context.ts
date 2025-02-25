@@ -1,5 +1,5 @@
 import { executeShell, getOrganizationObject, getCurrentOrganization, getBranchName, getTargetOrg } from "./taskFunctions.js"
-import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems, CONFIG_FILE, createConfigurationFile } from "./util.js";
+import { convertNameToKey, convertKeyToName,  getFiles, filterDirectory, addNewItems, CONFIG_FILE, createConfigurationFile} from "./util.js";
 import {GitHubApi} from "./github-graphql.js";
 import {GitHubProjectApi} from "./github-project-graphql.js";
 import {GitLabApi} from "./gitlab-graphql.js";
@@ -35,7 +35,7 @@ const ISSUES_TYPES = [ { value: 'feature', title: 'feature' }, { value: 'bug', t
 
 function searchInFolderHierarchy( element: string, parentFolder: string ): string {
     if ( fs.existsSync( `${parentFolder}/${element}` )) {
-      return `${parentFolder}/${element}`;
+      return parentFolder;
     } else {  
       const lastIndex = parentFolder.lastIndexOf('/');
       if ( lastIndex !== -1 ){
@@ -51,9 +51,10 @@ function searchInFolderHierarchy( element: string, parentFolder: string ): strin
 function getDataFromPackage() {
     const data :Record<string,string> = {};
     try {
-      const filename = searchInFolderHierarchy( "package.json", process.cwd() ); 
-      if ( !filename ) {
-        throw new Error("No se encontro el package.json en " + process.cwd());
+      const PROJECT_FOLDER = searchInFolderHierarchy('package.json', process.cwd() || '.');  
+      const filename = `${PROJECT_FOLDER}/package.json`; 
+      if ( !fs.existsSync( filename )) {
+        throw new Error("No se encontro el package.json en " + PROJECT_FOLDER);
       }
       const content = fs.readFileSync(filename, "utf8");
       const packageJson = JSON.parse(content);

@@ -1,7 +1,6 @@
 import context, { initializeContext } from "./context.js";
 import { logError, logStep } from "./color.js";
-import fs from "fs";
-import { getModelFolders, getFiles, filterJson, searchInFolderHierarchy, readJsonSync } from "./util.js";
+import { getModelFolders, getFiles, filterJson, readJsonSync } from "./util.js";
 import { validateCommand, validateFunction, executeFunction, executeCommand, taskFunctions } from "./taskFunctions.js";
 import prompts from "prompts";
 import { ICriteria, IStep, IStepCommand, IStepFunction, IStepSubTask, IStepTask, ITask, Step } from "../types/helpers/tasks.js";

@@ -4,9 +4,10 @@ import prompts, { Choice } from "prompts";
 import context, { ProjectServices, GitServices } from "./context.js";
 import { logInfo, logWarning } from "./color.js";
 import { AnyValue, CommandOptions, ObjectRecord } from "../types/auto.js";
-const MODELS_FOLDER = searchInFolderHierarchy('models', fileURLToPath(import.meta.url));
+const MODELS_FOLDER = searchInFolderHierarchy('models', fileURLToPath(import.meta.url)) + '/models';
 export const WORKING_FOLDER = process.env.INIT_CWD || ".";
-export const CONFIG_FILE = searchInFolderHierarchy('.autoforce.json', WORKING_FOLDER);
+export const PROJECT_FOLDER = searchInFolderHierarchy('package.json', WORKING_FOLDER);
+export const CONFIG_FILE = PROJECT_FOLDER + '/.autoforce.json';
 export const DICTIONARY_FOLDER =  process.cwd() + "/docs"; //  context.dictionaryFolder;
 export const filterJson = (fullPath: string): boolean => fullPath.endsWith(".json");
 export const filterDirectory = (fullPath: string): boolean => fs.lstatSync(fullPath).isDirectory();
@@ -279,10 +280,9 @@ export function addNewItems(baseArray: string[], newArray: string[]) {
     }
   }
 }
-
 export function searchInFolderHierarchy( element: string, parentFolder: string ): string {
   if ( fs.existsSync( `${parentFolder}/${element}` )) {
-    return `${parentFolder}/${element}`;
+    return parentFolder;
   } else {  
     const lastIndex = parentFolder.lastIndexOf('/');
     if ( lastIndex !== -1 ){
