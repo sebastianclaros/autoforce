@@ -32,21 +32,22 @@ export default async function main() {
         try {
         const config = getConfigFromArgs(process.argv.slice(2));
         const taskCommandKeys = Object.keys(taskCommand);
-        if ( taskCommandKeys.includes(config.command) ) {
-            const tasks = getTasks(config.subfolder);
-            const taskName = await askForTaskName(config.taskName, tasks);
-            if ( taskName ) {        
-                const task = tasks[taskName];
-                context.options = config.arguments && task.arguments ? {...config.options, ...createObject( task.arguments, config.arguments)} : config.options;
-                // Valida los json de task y subtask
-                if ( validateTask(task) ) {
-                    await taskCommand[config.command](task, context.options );
-                } else {
-                    logError('Verifique que los json de task y subtask esten validos');
-                }
-            }
-        } else {
+        if ( !taskCommandKeys.includes(config.command) ) {
             await proxyCommand[config.command](config.taskName, config.options);
+            return true
+        }
+
+        const tasks = getTasks(config.subfolder);
+        const taskName = await askForTaskName(config.taskName, tasks);
+        if ( taskName ) {        
+            const task = tasks[taskName];
+            context.options = config.arguments && task.arguments ? {...config.options, ...createObject( task.arguments, config.arguments)} : config.options;
+            // Valida los json de task y subtask
+            if ( validateTask(task) ) {
+                await taskCommand[config.command](task, context.options );
+            } else {
+                logError('Verifique que los json de task y subtask esten validos');
+            }
         }
     } catch(error) {
         if ( error instanceof Error ) {

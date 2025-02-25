@@ -259,7 +259,7 @@ class Context implements IObjectRecord {
         this.repositoryRepo = data.repositoryRepo;        
     }
 
-    async loadConfig() {
+    async createConfig() {
         if ( !fs.existsSync(CONFIG_FILE) ) {
             logWarning('Bienvenido! La herramienta Autoforce necesita un primer paso de configuracion antes de usarla.');
             logWarning('- Podes usar el asistente ejecutando npx autoforce config' );
@@ -278,19 +278,24 @@ class Context implements IObjectRecord {
             } 
             return false;  
         }
-        const content = fs.readFileSync(CONFIG_FILE, "utf8");
-        try {
-          const config: ObjectRecord = JSON.parse(content);
-          for( const key in config ) {
-            this.set(key, config[key] );
+    }
+    loadConfig() {
+        if ( fs.existsSync(CONFIG_FILE) ) {
+            const content = fs.readFileSync(CONFIG_FILE, "utf8");
+            try {
+              const config: ObjectRecord = JSON.parse(content);
+              for( const key in config ) {
+                this.set(key, config[key] );
+            }
+            } catch {
+              throw new Error(`Verifique que el ${CONFIG_FILE} sea json valido`  );
+            }
+         return true
         }
-        } catch {
-          throw new Error(`Verifique que el ${CONFIG_FILE} sea json valido`  );
-        }
-        return true
     }
 
     init() {
+        this.createConfig();
         this.loadProjectApi();
         this.loadGitApi();
 
