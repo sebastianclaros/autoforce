@@ -35,19 +35,32 @@ En cada una de ellas buscamos automatizar o integrar las siguientes gestiones:
 - Calidad de codigo (PMD)
 - Uso de IA ( OpenAI, )
 
+## Tipos de Modelos
+
+Al principio habia pensando en una lista de modelos, ejemplo paquetes de appexchange y otro para proyectos sobre salesforce. 
+
+Pero al final vi que los modelos son combinaciones de acuerdo a las siguientes variables:
+- Branching strategy: En este sentido, el start y finish van a hacer task distintas, si quiero un gitflow o main
+- Tipo de desarrollo: Si estoy desarrollando paquetes o usango scratch en el start voy a buscar que me arme un ambiente nuevo 
+- Tipo de Projecto: Si el projecto maneja milestones como releases, cambian o se agregan mas preguntas en algunos steps
+- Modelo de documentacion: La documentacion estaria muy relacionada con el tipo de desarrollo, pero quedo como una variable aparte por orden.
+
+
 ## Roadmap Status
 
-1. Modelos
-    - [Model A] "Procesos de Negocio en Clientes de Salesforce": 70%
+1. Implementaciones
+    - "Procesos de Negocio en Clientes de Salesforce": 70%
         Salesforce: Scratchs con Tracking y deploys usando sf cli 
         Documentacion: Markdowns de Procesos con Github pages
-        Gestion de Proyecto: Github Project
-        Source Control: Github
+        Gestion de Proyecto: Project con milestones
         Branching Strategy: Github workflow
 
-    - [Model B] "Desarrollo de Producto": 0%
+    - "Desarrollo de Producto": 30%
+        Salesforce: Scratchs con Tracking y deploys con second generation package 
+        Documentacion: Markdowns de Procesos con Github pages
+        Gestion de Proyecto: Project con milestones
+        Branching Strategy: Gitflow workflow
 
-    - [Custom] "Modelo personalizado" 
 
 2. Github Services
     - Github: Listo
@@ -72,9 +85,22 @@ En cada una de ellas buscamos automatizar o integrar las siguientes gestiones:
     - Documentation: 0%
 
 
+## Repositorio de Ejemplo
+En el siguiente [repositorio](https://github.com/sebastianclaros/autoforce-test) tomamos como ejemplo un proyecto de Salesforce. 
+En la carpeta scripts/test hay una serie de comandos (all.sh), que hace de forma autamtizada lo siguiente:
+
+* Hace un upgrade de autoforce
+* Crea un Milestone representando un release nuevo
+* Crea 3 issues dentro de ese Milestone
 
 
-## Usos
+
+
+
+
+
+## Uso
+
 Una vez instalado se puede crear scripts a medida o bien ejecutar 
 
 ```
@@ -102,7 +128,8 @@ https://github.com/sebastianclaros/autoforce-test
 La guia del readme sirve de ejemplo.
 
 
-## Testear una version
+
+## Testear una version en forma local
 
 Para hacer un testeo local se puede generar una version nueva
 
