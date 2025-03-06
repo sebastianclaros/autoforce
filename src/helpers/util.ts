@@ -41,14 +41,14 @@ export function getFilesInFolders(folders: string[], filter: (fullPath: string) 
 
 
 export function getModelFolders(subfolder: string) {
-  const folder =  [
+  const folders =  [
     `${MODELS_FOLDER}/dev/${context.devModel}/${subfolder}`, 
     `${MODELS_FOLDER}/git/${context.gitModel}/${subfolder}`, 
     `${MODELS_FOLDER}/doc/${context.docModel}/${subfolder}`, 
     `${MODELS_FOLDER}/project/${context.projectModel}/${subfolder}`, 
   ];
   // Filter only folders that exists
-  return folder.filter( folder => fs.existsSync(folder) );
+  return folders.filter( folder => fs.existsSync(folder) );
 } 
 function getTemplates(filter: (fullPath: string) => boolean ): string[] {
   return getFilesInFolders( getModelFolders('templates'), filter);
