@@ -228,6 +228,22 @@ export class GitHubProjectApi extends GitHubApi implements  IProjectApi{
   async getIssues() {
     return await this.getIssuesWithFilter( `{ states: OPEN }` );
   }
+
+  async searchIssues(title: string): Promise<IIssueObject []> {
+    const query = `query getIssues() {
+      search(query: "repo:${this.repoVar.owner}/${this.repoVar.repo} in:title ${title}", type: ISSUE, first: 10) {
+          nodes {
+            ... on Issue {
+              id
+              number
+              title
+            }
+          }
+        }        
+    }`; 
+    const {search}:  { search: { nodes: { id: string, number: number, title: string } [] }} = await this.graphqlAuth(query, this.repoVar);
+    return search.nodes;
+  }
   
   async getIssuesWithFilter( filterBy: string) {
     const query = `

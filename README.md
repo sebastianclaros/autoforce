@@ -94,11 +94,6 @@ En la carpeta scripts/test hay una serie de comandos (all.sh), que hace de forma
 * Crea 3 issues dentro de ese Milestone
 
 
-
-
-
-
-
 ## Uso
 
 Una vez instalado se puede crear scripts a medida o bien ejecutar 

@@ -403,14 +403,21 @@ export const taskFunctions: { [s: string]: AnyValue } = {
     
     async validateIssue(issueNumber: string, states: string) {        
         if ( context.projectApi === undefined ) {
+            context.errorMessage = 'context.projectApi esta undefined';
             return false;
         }
         const issue = await context.projectApi.getIssue(issueNumber);        
         if ( !issue.state ) {
+            context.errorMessage = 'El state del issue es undefined';
             return false;
         }
         const arrayStates = states.toLocaleLowerCase().replace(' ', '').split(',');
-        return arrayStates.includes(issue.state.toLocaleLowerCase().replace(' ', ''));
+        const validate = arrayStates.includes(issue.state.toLocaleLowerCase().replace(' ', ''));
+        if ( !validate ) {
+            context.errorMessage = `El state del issue es "${issue.state}", mientras deberia ser ${states}`;
+            return false;
+        }
+        return true;
     },
     
     async validaNoseaBranchActual(newBranchName: string): Promise<boolean> {

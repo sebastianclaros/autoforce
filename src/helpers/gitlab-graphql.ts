@@ -43,6 +43,10 @@ export class GitLabApi implements IGitApi, IProjectApi {
       console.log(title, state, description, dueOn) ;  
       return { id: '', title: '', state: '', url: '' };
     }
+    async searchIssues(title: string): Promise<IIssueObject []> {
+      console.log(title);
+      return [];
+    }
     async updateMilestone(title: string, state = 'open', description?: string, dueOn?: string ) {
       console.log(title, state, description, dueOn) ;  
       return { id: '', title: '', state: '', url: '' };

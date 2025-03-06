@@ -53,6 +53,7 @@ interface IGitApi {
 
 interface IProjectApi {
     moveIssue: (issueNumber: string, state: string) => Promise<boolean>;
+    searchIssues(title?: string): Promise<IIssueObject[]>;
     getIssues(): Promise<IIssueObject[]>;
     getIssuesWithFilter(filter?: string): Promise<IIssueObject[]>;
     getIssue(issueNumber: string): Promise<IIssueObject>;

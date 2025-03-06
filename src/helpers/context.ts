@@ -98,6 +98,7 @@ class Context implements IObjectRecord {
     devModel: string|undefined; // Default Model de commands
     gitModel: string|undefined;
     docModel: string|undefined;
+    errorMessage = '';
     projectModel: string|undefined;
     gitServices: GitServices = GitServices.None; 
     isGitApi = false;
@@ -495,6 +496,13 @@ class Context implements IObjectRecord {
     }    
 
     async askFornewIssueNumber() {
+        if ( this.options.issue && this.projectApi) {
+            const issues = await this.projectApi.searchIssues(this.options.issue);
+            if ( issues.length === 1 ) {
+                return `${issues[0].number}`;
+            }
+        }
+
         const answer = await prompts([
             {
               type: "text",
