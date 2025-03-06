@@ -1,5 +1,22 @@
 # Versiones
 
+
+0.1.25
+## Version 0.1.25
+- Fecha: 
+- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.25)
+- Cambios:
+    * Bugfixing de carpeta de subtask para seguir con la automatizacion de autoforce-test 
+
+0.1.24
+## Version 0.1.24
+- Fecha: 
+- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.24)
+- Cambios:
+    * Funcionalidada nueva de Search Issues
+    * Usar el title como identificador de issue (--issue)
+
+
 0.1.23
 ## Version 0.1.23
 - Fecha: 

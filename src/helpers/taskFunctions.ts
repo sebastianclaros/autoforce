@@ -63,10 +63,10 @@ function convertArgsToString(args: StepArguments) {
 export async function executeCommand(step: IStepCommand) {
     try {
         context.set('command', step.command + ' ' + convertArgsToString(step.arguments) );
-        execSync(step.command + ' ' + convertArgsToString(step.arguments), {stdio: 'inherit'});   
-   
+        execSync(step.command + ' ' + convertArgsToString(step.arguments), {stdio: 'inherit'});     
         return true;
-    } catch {
+    } catch (e){
+        context.errorMessage = `Se produjo un error al ejecutar el comando: ${e}`;
         return false;
     }
 }

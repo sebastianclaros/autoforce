@@ -47,14 +47,17 @@ function searchInFolderHierarchy( element: string, parentFolder: string ): strin
     }
     return '';
   }
-  
+
+function getProjectPath() {
+    return searchInFolderHierarchy('package.json', process.cwd() || '.');  
+}
 function getDataFromPackage() {
     const data :Record<string,string> = {};
     try {
-      const PROJECT_FOLDER = searchInFolderHierarchy('package.json', process.cwd() || '.');  
-      const filename = `${PROJECT_FOLDER}/package.json`; 
+      const projectPath = getProjectPath();
+      const filename = `${projectPath}/package.json`; 
       if ( !fs.existsSync( filename )) {
-        throw new Error("No se encontro el package.json en " + PROJECT_FOLDER);
+        throw new Error("No se encontro el package.json en " + projectPath);
       }
       const content = fs.readFileSync(filename, "utf8");
       const packageJson = JSON.parse(content);
@@ -99,6 +102,7 @@ class Context implements IObjectRecord {
     gitModel: string|undefined;
     docModel: string|undefined;
     errorMessage = '';
+    projectPath = getProjectPath();
     projectModel: string|undefined;
     gitServices: GitServices = GitServices.None; 
     isGitApi = false;
