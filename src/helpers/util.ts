@@ -125,7 +125,7 @@ async function getBaseConfig(config: Record<string, AnyValue>): Promise<Record<s
         if ( automationModel.model === undefined) return;
         config[contextProperty] =  automationModel.model;        
      }
-
+     
      // Gestion del Proyecto
      const projectChoices = [ { title: 'Github Projects', value: ProjectServices.GitHub}, { title: 'GitLab Projects', value: ProjectServices.GitLab} , { title: 'Jira', value: ProjectServices.Jira}  , { title: 'None', value: ProjectServices.None} ]
      const projectServices = await prompts([{
@@ -150,7 +150,17 @@ async function getBaseConfig(config: Record<string, AnyValue>): Promise<Record<s
        config.backlogColumn = backlogColumn.backlogColumn;
        logInfo(`Por omision ser utilizan proyectos dentro de ${context.repositoryOwner} y ${context.repositoryRepo} `);  
      }
- 
+
+    // dictionaryFolder
+    const dictionaryFolder = await prompts([{
+      type: "text",
+      name: "dictionaryFolder",
+      initial: config.dictionaryFolder,
+      message: "Ruta a los modulos de la documentacion (desde el root del proyecto)"
+    }]);  
+    if ( dictionaryFolder.dictionaryFolder === undefined) return ;      
+    config.dictionaryFolder = dictionaryFolder.dictionaryFolder;
+       
    // Id de Projecto
    const projectId = await prompts([{
      type: "text",
@@ -170,7 +180,7 @@ export async function createConfigurationFile(taskName?: string, options?: Comma
     storeConfig(options);
     return true;    
   }
-  const baseConfig = { backlogColumn: options?.backlogColumn || context.backlogColumn, devModel: options?.devModel || context.devModel, docModel: options?.docModel ||context.docModel, projectModel: options?.projectModel ||context.projectModel, gitModel: options?.gitModel ||context.gitModel ,gitServices: options?.gitServices || context.gitServices, projectServices: options?.projectServices ||context.projectServices, projectId: options?.projectId ||context.projectId, listFilter: options?.listFilter ||context.listFilter, listTemplate: options?.listTemplate || context.listTemplate  };
+  const baseConfig = { backlogColumn: options?.backlogColumn || context.backlogColumn, devModel: options?.devModel || context.devModel, docModel: options?.docModel ||context.docModel, projectModel: options?.projectModel ||context.projectModel, gitModel: options?.gitModel ||context.gitModel ,gitServices: options?.gitServices || context.gitServices, projectServices: options?.projectServices ||context.projectServices, projectId: options?.projectId ||context.projectId, listFilter: options?.listFilter ||context.listFilter, listTemplate: options?.listTemplate || context.listTemplate };
   const config = taskName ? await getTaskConfig(baseConfig): await getBaseConfig(baseConfig);
 
   if ( !config ) return false;

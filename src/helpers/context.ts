@@ -108,21 +108,21 @@ class Context implements IObjectRecord {
     isGitApi = false;
     gitApi: IGitApi | undefined;
     version :string | undefined;    
-    dictionaryFolder:string = process.cwd() + "/docs";
-
+    
     options: Record<string,AnyValue> = {};
-
+    
     projectServices: ProjectServices = ProjectServices.None; 
     isProjectApi = false;
     projectApi: IProjectApi | undefined;
-
+    
     sfInstalled = true; 
     sfToken = true;
-
+    
     branchName: string | undefined;
     issueNumber: string | undefined;
     issueType: string | undefined;
-
+    
+    _dictionaryFolder:string | undefined;
     _process: string | undefined;
     _processesHeader: Record<string, IProcessHeader> | undefined;
 
@@ -289,9 +289,9 @@ class Context implements IObjectRecord {
             const content = fs.readFileSync(CONFIG_FILE, "utf8");
             try {
               const config: ObjectRecord = JSON.parse(content);
-              for( const key in config ) {
-                this.set(key, config[key] );
-            }
+                for( const key in config ) {
+                    this.set(key, config[key] );
+                }
             } catch {
               throw new Error(`Verifique que el ${CONFIG_FILE} sea json valido`  );
             }
@@ -357,7 +357,13 @@ class Context implements IObjectRecord {
           throw new Error(`No se pudo guardar la metadata`  );
         }
     }
-
+    set dictionaryFolder(value:string) {
+        this._dictionaryFolder = value;
+    }
+    
+    get dictionaryFolder() {
+        return this._dictionaryFolder ? this._dictionaryFolder:  getProjectPath() + '/docs';
+    }
     get processesHeader(): Record<string,IProcessHeader> {
         if ( !this._processesHeader ) {
             this._processesHeader = {};
@@ -401,10 +407,10 @@ class Context implements IObjectRecord {
     }
 
     getModules(): string[] {
-        return getFiles(this.dictionaryFolder, filterDirectory, false, ['diccionarios']);
+        return getFiles(this.dictionaryFolder, filterDirectory, false, ['diccionarios', 'src', '.docusaurus', 'node_modules']);
     }
-
-    get modules(): PromptChoices {
+    
+    modules(): PromptChoices {
         return this.getModules().map( module => { return { value: module, title: module } } ) ;    
     }
 
@@ -607,7 +613,8 @@ class Context implements IObjectRecord {
         return inputsArray;
     }
 
-    async askForExit() {
+    async askForExit(/* prompt: PromptObject */) {
+        
         const answer = await prompts([
             {
               type: "confirm",
@@ -641,14 +648,17 @@ class Context implements IObjectRecord {
 
     async askForArguments(inputs: TaskArguments) {
         // unifica los dos tipos de inputs (array y objeto) en un array de inputs
-        const inputsArray =  await this.convertToArrayOfInputs(inputs);
-
-        for(const input of inputsArray) {
-            const hasValue = await this.get(input.name as string);
-            if ( !hasValue ) {
-                const answer = await prompts([input], {onCancel: this.askForExit});
-                this[input.name as keyof IObjectRecord] =  answer[input.name as string];
+        try {
+            const inputsArray =  await this.convertToArrayOfInputs(inputs);
+            for(const input of inputsArray) {
+                const hasValue = await this.get(input.name as string);
+                if ( !hasValue ) {
+                    const answer = await prompts([input], {onCancel: this.askForExit});
+                    this[input.name as keyof IObjectRecord] =  answer[input.name as string];
+                }
             }
+        } catch {
+            throw new Error(`No se pudo obtener los argumentos para ${inputs}`);
         }
     }
     setObject( obj: ObjectRecord ) {

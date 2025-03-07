@@ -272,16 +272,16 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         if ( !tryToRetrieve ) {
             return false;
         }
-        executeShell( `sf project retrieve start` );
+        executeShell( "sf project retrieve start" );
         return await this.validateScratch();
     },
 
     async validateScratch() {
         const salida = executeShell( "sf project retrieve preview" );
         context.salida = salida;
-        const noHayCambios = salida.indexOf('No files will be deleted') !== -1 && salida.indexOf('No files will be retrieved') !== -1 && salida.indexOf('No conflicts found') !== -1;
+        context.noHayCambios = salida.indexOf('No files will be deleted') !== -1 && salida.indexOf('No files will be retrieved') !== -1 && salida.indexOf('No conflicts found') !== -1;
         // Probar de bajarlos // sf project retrieve start
-        return noHayCambios;
+        return context.noHayCambios;
     },
 
     async commitChanges() {

@@ -1,5 +1,12 @@
 # Versiones
 
+0.1.26
+## Version 0.1.26
+- Fecha: 
+- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.26)
+- Cambios:
+    * Bugfixing de create-scracth para autoforce-test 
+
 
 0.1.25
 ## Version 0.1.25

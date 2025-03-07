@@ -11,5 +11,6 @@
   "devModel": "npm",
   "docModel": "processes",
   "filter": "{states: OPEN}",
-  "template": "openIssues"
+  "template": "openIssues",
+  "dictionaryFolder": "docs/docs"
 }

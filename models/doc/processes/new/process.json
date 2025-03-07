@@ -1,7 +1,7 @@
 {
   "name": "process",
   "arguments": {
-    "folder": { "type": "select", "choices": "${modules}" },
+    "folder": { "type": "select", "values": "modules" },
     "name": { "required": true },
     "identifier": { "required": true }
   },
