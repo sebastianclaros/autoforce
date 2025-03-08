@@ -1,5 +1,12 @@
 # Versiones
 
+0.1.27
+## Version 0.1.27
+- Fecha: 
+- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.27)
+- Cambios:
+    * Bugfixing del template folder
+
 0.1.26
 ## Version 0.1.26
 - Fecha: 

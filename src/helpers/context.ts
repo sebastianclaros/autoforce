@@ -406,12 +406,10 @@ class Context implements IObjectRecord {
         return retArray;
     }
 
-    getModules(): string[] {
-        return getFiles(this.dictionaryFolder, filterDirectory, false, ['diccionarios', 'src', '.docusaurus', 'node_modules']);
-    }
     
-    modules(): PromptChoices {
-        return this.getModules().map( module => { return { value: module, title: module } } ) ;    
+    modulesFolders(): PromptChoices {
+        const folders = getFiles(this.dictionaryFolder, filterDirectory, true, ['diccionarios', 'src', '.docusaurus', 'node_modules']).sort();
+        return folders.map( module => { return { value: this.dictionaryFolder + '/' + module, title: module.replaceAll('/', ' > ') } } ) ;    
     }
 
     get existScratch(): boolean {
