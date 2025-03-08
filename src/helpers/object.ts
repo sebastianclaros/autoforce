@@ -7,7 +7,7 @@ let _templateEngine: undefined| TemplateEngine;
 
 function getTemplateEngine(){
   if ( !_templateEngine ) {
-    _templateEngine = templateGenerator( getModelFolders('dictionary'), "md");
+    _templateEngine = templateGenerator( getModelFolders('templates/dictionary'), "md");
   }
   return _templateEngine;
 }

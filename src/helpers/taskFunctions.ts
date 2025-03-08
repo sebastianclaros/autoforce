@@ -24,11 +24,11 @@ function generateTemplate( templateFolder: string[], templateExtension: string, 
     return templateEngine.rendered;
 }
 
-function createTemplate( templateFolder: string, templateExtension: string, template: string, filename: string, folder: string, context: ObjectRecord) {
-    if (!template || !filename || !templateFolder || !templateExtension) {
+function createTemplate( templateFolders: string[], templateExtension: string, template: string, filename: string, folder: string, context: ObjectRecord) {
+    if (!template || !filename || !templateFolders || !templateExtension) {
         return;
     }
-    const templateEngine = templateGenerator([templateFolder], templateExtension);
+    const templateEngine = templateGenerator(templateFolders, templateExtension);
 
     const formulas = {
         today: Date.now(),
@@ -397,7 +397,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
     },
     async createTemplate(template: string, folder: string, name: string, identifier: string) {
         const filename = name.toLocaleLowerCase().replaceAll(' ', '-') +  '.md';
-        createTemplate( '.', 'md', template, filename, folder, { name, identifier });
+        createTemplate( getModelFolders('templates') , 'md', template, filename, folder, { name, identifier });
         return true;
     },
     

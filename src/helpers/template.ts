@@ -72,7 +72,7 @@ export class TemplateEngine{
     // Busca en las carpetas el archivo
     for ( const currentFolder of this._sourceFolders ) {
       folder = currentFolder;
-      const filterWithExtension = (fileName:string) => fileName === `${name}.${extension}`;
+      const filterWithExtension = (fileName:string) => fileName.endsWith( `/${name}.${extension}`);
       const filterWithoutExtension = (fileName:string)=> fileName.split(".")[0].endsWith(name);
       const filter = ( extension === '*' || extension === '' ) ?  filterWithoutExtension: filterWithExtension; 
       const fileNames = getFiles(folder, filter ); 
