@@ -1,7 +1,11 @@
 {
     "name": "prepack",
+    "arguments": {
+      "newVersion": { "required": true, "default": "${version}" }
+    },
     "description": "Comando para previo al pack",
     "steps": [
+      { "name": "Actualiza la version", "function": "storeConfig", "arguments": ["version", "${newVersion}"] },
       {
         "name": "Borra el paquete",
         "command": "rm -f autoforce*.tgz",

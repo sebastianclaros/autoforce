@@ -126,14 +126,14 @@ La guia del readme sirve de ejemplo.
 
 ## Testear una version en forma local
 
-Para hacer un testeo local se puede generar una version nueva
+Para hacer un testeo local se puede generar una version nueva. Esto pide un nro de version arma el package en root como autoforce-latest.tgz
 
 ```
-yarn build && yarn pack
+yarn pack
 ```
 
-Y despues en algun proyecto se puede instalar
+Despues en el repositorio local autoforce-test, hay un script que lo instala. 
 
 ```
-yarn add -D files:<<path-to-file>>
+./scripts/test/upgrade-local.sh
 ```
