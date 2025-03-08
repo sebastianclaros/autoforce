@@ -27,6 +27,8 @@
   "scripts": {
     "prebuild": "rm -rf ./lib/",
     "build": "tsc --project tsconfig.build.json",
+    "prepack": "npx autoforce subtask prepack",
+    "postpack": "npx autoforce subtask postpack",
     "prettier": "prettier --write \"**/*.{css,html,js,json,ts,md,xml,yaml,yml}\"",
     "test:build": "yarn build && npm publish --dry-run && node ./bin/index.js",
     "test:package": "yarn build && npm publish --dry-run && node ./bin/index.js",

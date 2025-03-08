@@ -1,0 +1,10 @@
+{
+    "name": "postpack",
+    "description": "Comando despues de hacer el package localmente",
+    "steps": [
+      {
+        "name": "Renombra paquete",
+        "command": "mv autoforce*.tgz autoforce-last.tgz"
+      }
+    ]
+  }
