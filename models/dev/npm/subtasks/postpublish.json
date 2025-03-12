@@ -2,14 +2,11 @@
   "name": "publish",
   "guards": ["$NPM_TOKEN"],
   "arguments": {
-    "newVersion": { "required": true }
+    "newVersion": { "required": true , "default": "${version}" }
   },
   "description": "Comando para publicar un requerimiento al ambiente",
   "steps": [
-    { "name": "Actualiza la version", "function": "storeConfig", "arguments": ["version", "${newVersion}"] },
-    { "name": "Paquetiza", "subtask": "pack" },
     { "name": "Salida para el Changelog.md", "task": "list", "arguments": {"filter": "milestone", "template": "changelog", "milestone": "v${newVersion}"} },
-    { "name": "Publica", "command": "yarn publish ", "arguments": {"--new-version": "${newVersion}"} },
     { "name": "Actualiza el milestone", "function": "updateMilestone", "arguments": ["v${newVersion}", "closed"] }
   ]
 }
