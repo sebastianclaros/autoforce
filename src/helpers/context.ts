@@ -506,7 +506,7 @@ class Context implements IObjectRecord {
     async askFornewIssueNumber() {
         if ( this.options.issue && this.projectApi) {
             const issues = await this.projectApi.searchIssues(this.options.issue);
-            if ( issues.length === 1 ) {
+            if ( issues.length > 0 ) {
                 return `${issues[0].number}`;
             }
         }
