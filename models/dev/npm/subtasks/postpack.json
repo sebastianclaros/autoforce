@@ -4,7 +4,8 @@
     "steps": [
       {
         "name": "Renombra paquete",
-        "command": "mv autoforce*.tgz autoforce-latest.tgz"
+        "command": "mv autoforce*.tgz autoforce-latest.tgz",
+        "onError": "skip"
       }
     ]
   }
