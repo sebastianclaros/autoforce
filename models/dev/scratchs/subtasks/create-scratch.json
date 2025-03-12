@@ -18,6 +18,7 @@
         "--definition-file": "${projectPath}/config/project-scratch-def.json",
         "--alias": "${scratchName}",
         "--name": "${scratchName}",
+        "--wait": "120",
         "--duration-days": "${dias}"
       },
       "errorMessage": "No se pudo crear la scracth org, verifique que no se haya pasado del limite scratchs (3 activas)* sf org list --clean\n* o bien si quedo en la mitad del proceso\n* sf org resume. Pruebe manualmente: ${command}"
