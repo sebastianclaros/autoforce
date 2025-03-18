@@ -199,9 +199,8 @@ export function getBranchName(): string {
 export async function executeFunction(step: IStepFunction) {
     let returnValue = false;
     const functionName = step.function;
-    if ( typeof taskFunctions[functionName] === 'function' ) {       
-        
-        
+    if ( typeof taskFunctions[functionName] === 'function' ) {               
+        taskFunctions[functionName].apply(taskFunctions);
         if ( step.arguments && typeof step.arguments === 'object' ) {
             let mergedArgs: StepArguments = context.mergeArgs(step.arguments);
             if ( !Array.isArray(mergedArgs) ) {
@@ -273,7 +272,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
             return false;
         }
         executeShell( "sf project retrieve start" );
-        return await this.validateScratch();
+        return await taskFunctions.validateScratch();
     },
 
     async validateScratch() {
@@ -291,9 +290,8 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         }
         const message = await askForCommitMessage();
         executeShell( `git add --all` );
-        executeShell( `git commit -m ${message}` );
-        console.log(this);
-        return await this.checkCommitPending();
+        executeShell( `git commit -m "${message}"` );
+        return await taskFunctions.checkCommitPending();
     },
     async publishBranch() {
         try {
