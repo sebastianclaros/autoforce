@@ -4,10 +4,6 @@
   "description": "Comando para teminar un requerimiento. Automatiza las acciones cuando se termino el desarrollo de un requerimiento",
   "steps": [
     {
-      "criteria": { "field": "isDevelopment", "value": true },
-      "subtask": "validate-scratch"
-    },
-    {
       "name": "chequea si hay cambios sin commit",
       "function": "checkCommitPending",
       "description": "Chequea si hay algo sin commitear:\n ${salida}",
@@ -32,10 +28,6 @@
       "name": "crea el pull request",
       "subtask": "create-pull",
       "description": "Crea el pull request"
-    },
-    {
-      "criteria": { "field": "isDevelopment", "value": true },
-      "subtask": "drop-scratch"
     }
   ]
 }

@@ -1,5 +1,5 @@
 // Comandos validos
-import {createObject,  validateTask, getTasks, previewTask, helpTask, runTask, getTaskFolders} from "./helpers/tasks.js";
+import {createObject,  validateTask, getTasks, previewTask, helpTask, runTask} from "./helpers/tasks.js";
 import { ITask } from "./types/helpers/tasks.js";
 import { logError} from "./helpers/color.js";
 import prompts from "prompts";

@@ -292,6 +292,7 @@ export const taskFunctions: { [s: string]: AnyValue } = {
         const message = await askForCommitMessage();
         executeShell( `git add --all` );
         executeShell( `git commit -m ${message}` );
+        console.log(this);
         return await this.checkCommitPending();
     },
     async publishBranch() {

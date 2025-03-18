@@ -1,0 +1,12 @@
+{
+    "name": "validate-code",
+    "description": "Valida la calidad del codigo y que cumpla buenas practicas",
+    "errorMessage": "Fallo el script de calidad y validacion de codigo, lea atentamente los motivos",
+    "steps": [
+      {
+        "name": "Eslint",
+        "command": "npx eslint"
+      }
+    ]
+  }
+  
