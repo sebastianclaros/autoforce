@@ -1,15 +1,21 @@
 # Versiones
 
+0.1.3X
+## Version 0.1.3X Bugfixing
+- Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.30)
+- Cambios:
+    * Bugfixing de finish 
+    * Bugfixing del create scratch
+    * Bugfixing del taskFunctions
+
 0.1.27
 ## Version 0.1.27
-- Fecha: 
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.27)
 - Cambios:
     * Bugfixing del template folder
 
 0.1.26
 ## Version 0.1.26
-- Fecha: 
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.26)
 - Cambios:
     * Bugfixing de create-scracth para autoforce-test 
@@ -17,14 +23,12 @@
 
 0.1.25
 ## Version 0.1.25
-- Fecha: 
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.25)
 - Cambios:
     * Bugfixing de carpeta de subtask para seguir con la automatizacion de autoforce-test 
 
 0.1.24
 ## Version 0.1.24
-- Fecha: 
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.24)
 - Cambios:
     * Funcionalidada nueva de Search Issues
@@ -33,20 +37,17 @@
 
 0.1.23
 ## Version 0.1.23
-- Fecha: 
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.23)
 - Cambios:
     * Bugfixing para la suit de test autoforce-test
 
 ## Version 0.1.22
-- Fecha: 
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.22)
 - Cambios:
     * [publish] que cierre el milestone de la version
         - https://github.com/sebastianclaros/autoforce/issues/35
         
 ## Version 0.1.20
-- Fecha: 
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.20)
 - Cambios:
     * Test con instalacion de paquete
@@ -55,7 +56,6 @@
         - https://github.com/sebastianclaros/autoforce/issues/51
 
 ## Version 0.1.18
-- Fecha: 
 - Paquete: [Descargar](https://www.npmjs.com/package/autoforce/v/0.1.18ra la placa 
 
 TIPO CASO: Tarea Programada SF Deploy 254 Core & Industry 4 h)
